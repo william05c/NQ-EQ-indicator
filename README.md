@@ -65,6 +65,9 @@ and shows a live calibration table so you can verify the hit-rate yourself.
 | [`docs/05-limitations.md`](docs/05-limitations.md) | The measured accuracy ceiling — and the 90% question |
 | [`docs/06-tradingview.md`](docs/06-tradingview.md) | Install and verify the indicator |
 | [`docs/07-futures-and-24y.md`](docs/07-futures-and-24y.md) | 24 years of history, NQ/ES, session pitfalls |
+| [`docs/08-extending.md`](docs/08-extending.md) | **Where the headroom is** — ranked ideas, dead ends, how to add an instrument |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | The acceptance bar and how to submit evidence |
+| [`CHANGELOG.md`](CHANGELOG.md) | Release notes |
 
 ## How it works, in three sentences
 
@@ -105,6 +108,23 @@ node src/build_all_datasets.js   # re-pull the three datasets
 node src/range_forecast.js       # refit, revalidate, print next-session bands
 node src/fit_coefficients.js     # regenerate the Pine constants if you change the model
 ```
+
+## Contributing
+
+Every change is judged by one scorecard, not by opinion:
+
+```bash
+node src/benchmark.js --json     # prints MAE, coverage, regime split, vs naive/EWMA
+```
+
+To be merged, a model change must beat MAE by **≥2%**, keep 80% coverage within **78–84%**
+for both high and low, and not worsen the calm/wild split (currently 91% / 68%). The full
+bar, and the list of ideas already tested and rejected, is in
+[`CONTRIBUTING.md`](CONTRIBUTING.md) and [`docs/08-extending.md`](docs/08-extending.md).
+
+The honest summary of where headroom exists: **intraday data**, and better
+regime-conditional bands. More daily-frequency features do not help — three experiments
+in the repo demonstrate that.
 
 ## License
 

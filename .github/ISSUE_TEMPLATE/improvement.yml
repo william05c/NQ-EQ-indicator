@@ -1,0 +1,75 @@
+name: Model improvement
+description: Propose a change to the forecast model, with the required before/after evidence
+title: "[model] "
+labels: ["improvement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Read [CONTRIBUTING.md](https://github.com/william05c/NQ-EQ-indicator/blob/main/CONTRIBUTING.md) first.
+        **PRs without harness output cannot be evaluated.** Run:
+
+        ```
+        node src/benchmark.js --json > before.json
+        # apply your change
+        node src/benchmark.js --json > after.json
+        ```
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: What is the idea?
+      description: One paragraph. What information does it add that the model does not already have?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: class
+    attributes:
+      label: What kind of change is it?
+      options:
+        - New feature from existing OHLC data
+        - New data source (intraday, options, calendar, cross-asset)
+        - Model form (different regression, pooling, regime switching)
+        - Band construction / calibration
+        - Bug fix
+    validations:
+      required: true
+
+  - type: input
+    id: dataset
+    attributes:
+      label: Which dataset did you score on?
+      placeholder: nasdaq_composite_IXIC_daily_2002-2026.csv
+    validations:
+      required: true
+
+  - type: textarea
+    id: before
+    attributes:
+      label: Before (JSON)
+      render: json
+    validations:
+      required: true
+
+  - type: textarea
+    id: after
+    attributes:
+      label: After (JSON)
+      render: json
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Self-check
+      options:
+        - label: I verified there is no lookahead (features use only prior bars)
+          required: true
+        - label: I did not tune parameters on the evaluation window
+          required: true
+        - label: Coverage stayed within 78–84% for both high and low
+          required: true
+        - label: I read docs/08-extending.md and this is not one of the known dead ends
+          required: true

@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "nasdaq-range-forecaster",
   "version": "1.0.0",
   "description": "Calibrated daily high/low prediction bands for NQ, ES and the Nasdaq Composite, with walk-forward validation and a TradingView indicator",
@@ -7,6 +7,7 @@
     "data": "node src/build_all_datasets.js",
     "refresh": "node src/refresh_ixic.js",
     "forecast": "node src/range_forecast.js",
+    "benchmark": "node src/benchmark.js",
     "backtest": "node src/backtest_10y.js",
     "compare": "node src/model_compare.js",
     "futures": "node src/nq_es_indicator.js",
@@ -31,3 +32,4 @@
     "node": ">=18"
   }
 }
+

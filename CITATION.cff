@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use this software or its results, please cite it as below."
+title: "Nasdaq Range Forecaster"
+abstract: >-
+  Calibrated daily high/low prediction bands for NQ, ES and the Nasdaq Composite,
+  with walk-forward validation, a measured accuracy ceiling, and a TradingView
+  (Pine v5) implementation.
+type: software
+authors:
+  - name: "william05c"
+    website: "https://github.com/william05c"
+repository-code: "https://github.com/william05c/NQ-EQ-indicator"
+url: "https://github.com/william05c/NQ-EQ-indicator"
+license: MIT
+version: "1.0.0"
+date-released: "2026-10-19"
+keywords:
+  - nasdaq
+  - nq
+  - es
+  - futures
+  - volatility
+  - range forecast
+  - tradingview
+  - pine script
+  - quantitative finance
