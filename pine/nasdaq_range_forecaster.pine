@@ -122,6 +122,19 @@ loP10 = op * (1.0 - math.exp(muD + qD90))
 loP50 = op * (1.0 - math.exp(muD + qD50))
 loP90 = op * (1.0 - math.exp(muD + qD10))
 
+// ---------------- residual accumulation ----------------
+// MUST run on every bar. This is what keeps the bands alive: without it the
+// residual arrays stay empty, validBands never becomes true, and every plot
+// evaluates to na (the indicator loads but draws nothing).
+uRaw = math.max((high - open) / open, 0.0001)
+dRaw = math.max((open - low) / open, 0.0001)
+array.push(resU, math.log(uRaw) - muU)
+array.push(resD, math.log(dRaw) - muD)
+if array.size(resU) > residWin
+    array.shift(resU)
+if array.size(resD) > residWin
+    array.shift(resD)
+
 // ---------------- plots ----------------
 pHi90 = plot(showBands and validBands ? hiP90 : na, "High p90", color = hiCol, linewidth = 1)
 pHi10 = plot(showBands and validBands ? hiP10 : na, "High p10", color = hiCol, linewidth = 1)

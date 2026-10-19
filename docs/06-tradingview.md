@@ -27,6 +27,28 @@ in *Settings → Asset profile*.
 Two alerts are pre-wired: *high above p90 band* and *low below p10 band* — the
 range-expansion signals.
 
+## Known failure mode: loads, but draws nothing
+
+The first published version of this script had a bug that is worth documenting, because it
+looks like a TradingView limitation but is not.
+
+The residual arrays (`resU`, `resD`) are what feed the band quantiles. A transcription error
+left them **declared but never populated** — the `array.push` block was missing. The script
+compiles, attaches to the chart, shows up in the legend… and draws nothing, because
+`validBands` is never true and every `plot()` evaluates to `na`.
+
+Symptoms:
+
+- indicator appears in the legend, no lines on the chart
+- the stats table reads `Sessions scored: 0` and `n/a` for the rates
+- **no error message** — which is why it is easy to blame the plan or the runtime limit
+
+Diagnosis rule: an execution timeout produces an explicit error on the chart ("calculation
+timed out"), never silence. Silence means every value is `na`.
+
+`node src/pine_lint.js` now checks for exactly this: every `array.new_float()` that a plot
+depends on must also be pushed somewhere.
+
 ## Verify it yourself
 
 The table is a real backtest running on your chart's history. On NQ1! daily you should see:
