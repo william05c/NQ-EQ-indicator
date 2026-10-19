@@ -256,21 +256,25 @@ if not useIntraday and showProj and barstate.islast and dValid
     projLoLn := line.new(xL, nLo50, xR, nLo50, color = loCol, width = 2, style = line.style_dashed)
 
 // ---------------- table ----------------
-var table t = table.new(position.top_right, 2, 6, border_width = 1)
+var table t = table.new(position.top_right, 2, 8, border_width = 1)
 if showTable and barstate.islast
     table.cell(t, 0, 0, useIntraday ? "Nowcast" : "Range", bgcolor = color.new(color.gray, 85), text_color = color.black)
     table.cell(t, 1, 0, prof + " / " + timeframe.period, bgcolor = color.new(color.gray, 85), text_color = color.black)
     if useIntraday
         table.cell(t, 0, 1, "Session elapsed", text_color = color.black)
         table.cell(t, 1, 1, str.tostring(elapsed * 100, "#.0") + "%", text_color = color.black)
-        table.cell(t, 0, 2, "High already set", text_color = color.black)
-        table.cell(t, 1, 2, str.tostring(pHiSet * 100, "#.0") + "%", text_color = hiCol)
-        table.cell(t, 0, 3, "Low already set", text_color = color.black)
-        table.cell(t, 1, 3, str.tostring(pLoSet * 100, "#.0") + "%", text_color = loCol)
-        table.cell(t, 0, 4, "Remaining swing", text_color = color.black)
-        table.cell(t, 1, 4, str.tostring(sigmaRem * z90, format.mintick) + " pts", text_color = color.black)
-        table.cell(t, 0, 5, "Session range", text_color = color.black)
-        table.cell(t, 1, 5, str.tostring(hiRef - loRef, format.mintick) + " pts", text_color = color.black)
+        table.cell(t, 0, 2, "HIGH will finish", text_color = color.black)
+        table.cell(t, 1, 2, str.tostring(hiNow10, format.mintick) + " to " + str.tostring(hiNow90, format.mintick), text_color = hiCol)
+        table.cell(t, 0, 3, "LOW will finish", text_color = color.black)
+        table.cell(t, 1, 3, str.tostring(loNow10, format.mintick) + " to " + str.tostring(loNow90, format.mintick), text_color = loCol)
+        table.cell(t, 0, 4, "High already set", text_color = color.black)
+        table.cell(t, 1, 4, str.tostring(pHiSet * 100, "#.0") + "%", text_color = color.black)
+        table.cell(t, 0, 5, "Low already set", text_color = color.black)
+        table.cell(t, 1, 5, str.tostring(pLoSet * 100, "#.0") + "%", text_color = color.black)
+        table.cell(t, 0, 6, "Session range so far", text_color = color.black)
+        table.cell(t, 1, 6, str.tostring(hiRef - loRef, format.mintick) + " pts", text_color = color.black)
+        table.cell(t, 0, 7, "Swing left", text_color = color.black)
+        table.cell(t, 1, 7, str.tostring(sigmaRem * z90, format.mintick) + " pts", text_color = color.black)
     else
         table.cell(t, 0, 1, "Bands from bar", text_color = color.black)
         table.cell(t, 1, 1, dValid ? "ready" : "warming up", text_color = color.black)
@@ -289,7 +293,12 @@ if barstate.islast
     if not na(statLbl)
         label.delete(statLbl)
     if showLabel and useIntraday
-        statLbl := label.new(bar_index, hi90, "elapsed " + str.tostring(elapsed * 100, "#.0") + "%\nhigh set " + str.tostring(pHiSet * 100, "#.0") + "%\nlow set " + str.tostring(pLoSet * 100, "#.0") + "%\nswing left " + str.tostring(sigmaRem * z90, "#") + " pts", style = label.style_label_down, color = color.new(color.white, 5), textcolor = color.black, size = size.small)
+        lblTxt = "NOWCAST - " + str.tostring(elapsed * 100, "#") + "% of session\n" +
+          "HIGH will finish " + str.tostring(hiNow10, format.mintick) + " to " + str.tostring(hiNow90, format.mintick) + "\n" +
+          "LOW  will finish " + str.tostring(loNow10, format.mintick) + " to " + str.tostring(loNow90, format.mintick) + "\n" +
+          "High set " + str.tostring(pHiSet * 100, "#") + "%   Low set " + str.tostring(pLoSet * 100, "#") + "%\n" +
+          "Swing left ~" + str.tostring(sigmaRem * z90, "#") + " pts"
+        statLbl := label.new(bar_index, hi90, lblTxt, style = label.style_label_down, color = color.new(color.white, 5), textcolor = color.black, size = size.small)
 
 // ---------------- alerts ----------------
 alertcondition(useIntraday and pHiSet > 0.9, "High set", "More than 90% chance today's high is already in")
