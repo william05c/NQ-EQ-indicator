@@ -37,6 +37,8 @@ showTable = input.bool(true, "Show live stats table", group = "Display")
 showMeds  = input.bool(true, "Plot median lines", group = "Display")
 hiCol     = input.color(color.new(color.teal, 20), "Upside colour", group = "Display")
 loCol     = input.color(color.new(color.maroon, 20), "Downside colour", group = "Display")
+showNext  = input.bool(true, "Project next session to the right", group = "Projection")
+nextBars  = input.int(2, "Projection width (bars)", minval = 1, maxval = 10, group = "Projection")
 
 // ---------------- profile ----------------
 autoProf = str.contains(syminfo.ticker, "NQ") ? "NQ" : str.contains(syminfo.ticker, "ES") ? "ES" : "IXIC"
@@ -179,5 +181,36 @@ if showTable and barstate.islast
 // ---------------- alerts ----------------
 alertcondition(validBands and high > hiP90, "High above p90 band", "Range expansion: high exceeded the p90 forecast band")
 alertcondition(validBands and low < loP10, "Low below p10 band", "Range expansion: low broke the p10 forecast band")
+
+// ---------------- next-session projection ----------------
+// The model forecasts a session's extremes FROM THAT SESSION'S OPEN, so a
+// historical band cannot be projected forward: tomorrow's band does not exist
+// until tomorrow opens. What follows is a visual guide only, anchored at the
+// last close, showing where the NEXT session's range is likely to sit.
+// It ignores the overnight gap, so treat it as indicative, not exact.
+var box  projHiBox = na
+var box  projLoBox = na
+var line projHiMed = na
+var line projLoMed = na
+
+if barstate.islast and showNext and showBands and validBands
+    anchor = close
+    nh10 = anchor * (1.0 + math.exp(muU + qU10))
+    nh50 = anchor * (1.0 + math.exp(muU + qU50))
+    nh90 = anchor * (1.0 + math.exp(muU + qU90))
+    nl10 = anchor * (1.0 - math.exp(muD + qD90))
+    nl50 = anchor * (1.0 - math.exp(muD + qD50))
+    nl90 = anchor * (1.0 - math.exp(muD + qD10))
+    xL = bar_index + 1
+    xR = bar_index + 1 + nextBars
+    if not na(projHiBox)
+        box.delete(projHiBox)
+        box.delete(projLoBox)
+        line.delete(projHiMed)
+        line.delete(projLoMed)
+    projHiBox := box.new(xL, nh90, xR, nh10, bgcolor = color.new(hiCol, 88), border_color = color.new(hiCol, 50))
+    projLoBox := box.new(xL, nl90, xR, nl10, bgcolor = color.new(loCol, 88), border_color = color.new(loCol, 50))
+    projHiMed := line.new(xL, nh50, xR, nh50, color = hiCol, width = 2, style = line.style_dashed)
+    projLoMed := line.new(xL, nl50, xR, nl50, color = loCol, width = 2, style = line.style_dashed)
 
 
