@@ -2,26 +2,28 @@
 // ============================================================================
 //  Daily Range NOWCAST - intraday, converging
 // ----------------------------------------------------------------------------
-//  The static intraday overlay shows where the day's high/low are LIKELY to end
-//  up before the session starts. This one updates continuously: as the day
-//  progresses, the projected final high/low converges onto what has already
-//  printed, and the table reports the probability that each extreme is already in.
+//  Projects where today's high/low will END UP, and updates as the session runs.
+//  The band converges onto what has already printed, and the table reports the
+//  probability that each extreme is already in.
 //
-//  This is the only way intraday data improves the forecast - not by making the
-//  09:30 number better, but by re-estimating it as information arrives.
+//  Why not "more intraday features at the open": at 09:30 the 14:00 bar does not
+//  exist. Intraday data cannot improve the pre-open forecast - it can only
+//  re-estimate it as information arrives. That is what this script does.
 //
-//  Maths: treat the remaining session as a driftless diffusion with volatility
+//  Maths: the remaining session is a driftless diffusion with volatility
 //  sigma_rem = sigma_d * sqrt(1 - t). By the reflection principle, given the
 //  running high H and price P,
 //
 //      P(final high <= h) = 2*Phi((h - P)/sigma_rem) - 1      (h >= max(H, P))
 //      =>  h_q = max(H, P + sigma_rem * Phi^-1((1+q)/2))
 //
-//  so the band converges onto H as t -> 1. Verified by Monte Carlo over 3,000
-//  simulated sessions per scenario: "already set" probabilities track realised
-//  frequency within 2-3 points, including under fat-tailed, U-shaped sessions.
+//  Monte Carlo over 3,000 simulated sessions per scenario: the "already set"
+//  probabilities track realised frequency within 2-3 points, including under
+//  fat-tailed increments and a U-shaped volatility profile.
 //
-//  Use on an intraday chart. The session window defaults to US cash hours.
+//  Design note: the running high/low come straight from the DAILY timeframe via
+//  request.security. An earlier version tracked them manually with session
+//  strings; that state could go stale and paint levels from previous days.
 // ============================================================================
 
 indicator("Daily Range Nowcast (intraday)", "RangeNowcast", overlay = true)
@@ -57,6 +59,8 @@ sD50 = prof == "NQ" ?  0.274472 : prof == "ES" ?  0.234755 :  0.299511
 sD90 = prof == "NQ" ?  1.427955 : prof == "ES" ?  1.412328 :  1.451093
 
 // ---------------- daily inputs ----------------
+// Returns the model features plus TODAY'S running high/low, all taken from the
+// daily timeframe. No manual session state, so nothing can go stale.
 dailyFeat() =>
     rrD  = (high - low) / close
     rrSD = math.min(math.max(rrD, 0.0), 0.5)
@@ -65,9 +69,9 @@ dailyFeat() =>
     r20  = nz(ta.sma(rrSD, 20)[1], rrSD)
     r60  = nz(ta.sma(rrSD, 60)[1], rrSD)
     rv   = math.min(math.max(nz(ta.stdev(lrD, 20, false)[1], 0.01), 0.0001), 0.5)
-    [open, r5, r20, r60, rv]
+    [open, r5, r20, r60, rv, high, low]
 
-[oD, r5D, r20D, r60D, rvD] = request.security(syminfo.tickerid, "D", dailyFeat(), lookahead = barmerge.lookahead_off)
+[oD, r5D, r20D, r60D, rvD, dHi, dLo] = request.security(syminfo.tickerid, "D", dailyFeat(), lookahead = barmerge.lookahead_off)
 
 capExc(x) =>
     math.min(math.max(math.exp(math.min(x, 0.69)), 0.0), 0.25)
@@ -81,26 +85,14 @@ muU = c0u + c1u * x1 + c2u * x2 + c3u * x3 + c4u * x4
 muD = c0d + c1d * x1 + c2d * x2 + c3d * x3 + c4d * x4
 
 // daily model's median high/low -> implied full-day range -> daily sigma
-dayHi50 = oD * (1.0 + capExc(muU + sU50))
-dayLo50 = oD * (1.0 - capExc(muD + sD50))
-sigmaDay = (dayHi50 - dayLo50) / 1.596   // Feller: E[range] = 1.596 * sigma
+dayHi50  = oD * (1.0 + capExc(muU + sU50))
+dayLo50  = oD * (1.0 - capExc(muD + sD50))
+sigmaRaw = (dayHi50 - dayLo50) / 1.596            // Feller: E[range] = 1.596 * sigma
+// sanity: a daily sigma above 8% of price is corrupt data, not a forecast
+sigmaDay = sigmaRaw > 0 and sigmaRaw < oD * 0.08 ? sigmaRaw : na
 
-// ---------------- session state ----------------
-// Fixed to US cash hours so the session flag and the elapsed clock can never disagree.
-sessStr  = "0930-1600"
+// ---------------- elapsed fraction of the US cash session ----------------
 sessZone = "America/New_York"
-inSess   = not na(time(timeframe.period, sessStr, sessZone))
-
-var float sHi = na
-var float sLo = na
-if inSess and not inSess[1]
-    sHi := high
-    sLo := low
-else if inSess
-    sHi := math.max(nz(sHi, high), high)
-    sLo := math.min(nz(sLo, low), low)
-
-// elapsed fraction of the session, from the clock
 startMin = 9 * 60 + 30
 endMin   = 16 * 60
 minsNow  = hour(time, sessZone) * 60 + minute(time, sessZone)
@@ -113,29 +105,32 @@ normCdf(x) =>
     y = 1.0 - ((((1.061405429 * a - 1.453152027) * a + 1.421413741) * a - 0.284496736) * a + 0.254829592) * a * math.exp(-x * x)
     x >= 0 ? 0.5 * (1.0 + y) : 0.5 * (1.0 - y)
 
-// Phi^-1((1+q)/2) for q = 0.10 / 0.50 / 0.90
-z10 = 0.125661
-z50 = 0.674490
-z90 = 1.644854
+z10 = 0.125661   // Phi^-1(0.55)
+z50 = 0.674490   // Phi^-1(0.75)
+z90 = 1.644854   // Phi^-1(0.95)
 
-sigmaRem = sigmaDay * math.sqrt(math.max(1.0 - elapsed, 0.0))
 pNow     = close
+sigmaRem = nz(sigmaDay, 0.0) * math.sqrt(math.max(1.0 - elapsed, 0.0))
 
-hiNow10 = math.max(nz(sHi, pNow), pNow + sigmaRem * z10)
-hiNow50 = math.max(nz(sHi, pNow), pNow + sigmaRem * z50)
-hiNow90 = math.max(nz(sHi, pNow), pNow + sigmaRem * z90)
-loNow10 = math.min(nz(sLo, pNow), pNow - sigmaRem * z90)
-loNow50 = math.min(nz(sLo, pNow), pNow - sigmaRem * z50)
-loNow90 = math.min(nz(sLo, pNow), pNow - sigmaRem * z10)
+hiRef = math.max(nz(dHi, pNow), pNow)
+loRef = math.min(nz(dLo, pNow), pNow)
+
+hiNow10 = math.max(hiRef, pNow + sigmaRem * z10)
+hiNow50 = math.max(hiRef, pNow + sigmaRem * z50)
+hiNow90 = math.max(hiRef, pNow + sigmaRem * z90)
+loNow90 = math.min(loRef, pNow - sigmaRem * z10)
+loNow50 = math.min(loRef, pNow - sigmaRem * z50)
+loNow10 = math.min(loRef, pNow - sigmaRem * z90)
 
 // probability each extreme is already set (reflection principle)
-pNewHigh = 2.0 * (1.0 - normCdf((nz(sHi, pNow) - pNow) / math.max(sigmaRem, 0.0000001)))
-pNewLow  = 2.0 * (1.0 - normCdf((pNow - nz(sLo, pNow)) / math.max(sigmaRem, 0.0000001)))
+safeSig  = math.max(sigmaRem, pNow * 0.000001)
+pNewHigh = 2.0 * (1.0 - normCdf((hiRef - pNow) / safeSig))
+pNewLow  = 2.0 * (1.0 - normCdf((pNow - loRef) / safeSig))
 pHiSet   = math.min(math.max(1.0 - pNewHigh, 0.0), 1.0)
 pLoSet   = math.min(math.max(1.0 - pNewLow, 0.0), 1.0)
 
 // ---------------- plots ----------------
-showIt = showBand and inSess
+showIt = showBand and not na(sigmaDay)
 plot(showIt ? hiNow90 : na, "Final high p90", color = hiCol, linewidth = 1)
 plot(showIt ? hiNow10 : na, "Final high p10", color = color.new(hiCol, 60), linewidth = 1)
 plot(showIt ? hiNow50 : na, "Final high median", color = hiCol, linewidth = 2)
@@ -145,7 +140,7 @@ plot(showIt ? loNow50 : na, "Final low median", color = loCol, linewidth = 2)
 
 // ---------------- table ----------------
 var table t = table.new(position.top_right, 2, 6, border_width = 1)
-if showTable and barstate.islast and inSess
+if showTable and barstate.islast and not na(sigmaDay)
     table.cell(t, 0, 0, "Nowcast", bgcolor = color.new(color.gray, 85), text_color = color.black)
     table.cell(t, 1, 0, prof, bgcolor = color.new(color.gray, 85), text_color = color.black)
     table.cell(t, 0, 1, "Session elapsed", text_color = color.black)
@@ -157,9 +152,8 @@ if showTable and barstate.islast and inSess
     table.cell(t, 0, 4, "Remaining swing", text_color = color.black)
     table.cell(t, 1, 4, str.tostring(sigmaRem * z90, format.mintick) + " pts", text_color = color.black)
     table.cell(t, 0, 5, "Session range", text_color = color.black)
-    table.cell(t, 1, 5, str.tostring(nz(sHi, pNow) - nz(sLo, pNow), format.mintick) + " pts", text_color = color.black)
+    table.cell(t, 1, 5, str.tostring(hiRef - loRef, format.mintick) + " pts", text_color = color.black)
 
 // ---------------- alerts ----------------
 alertcondition(pHiSet > 0.9, "High set", "More than 90% chance today's high is already in")
 alertcondition(pLoSet > 0.9, "Low set", "More than 90% chance today's low is already in")
-alertcondition(inSess and high > nz(sHi[1], high), "New session high", "A new session high has printed")

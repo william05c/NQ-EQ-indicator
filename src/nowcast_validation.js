@@ -135,6 +135,7 @@ for (const kind of ['gauss', 'fat']) {
       if (d.lo >= m.loAtMark - 1e-12) freqLits[c]++;
     }
   }
+  let worst = 0;
   console.log(`${kind} paths - 80% band coverage, and calibration of "extreme already set"`);
   for (const c of CPS) {
     const hp = probH[c] / nH[c], lp = probL[c] / nL[c];
@@ -142,6 +143,9 @@ for (const kind of ['gauss', 'fat']) {
     console.log(`  at ${(c * 100).toFixed(0).padStart(2)}%:  band high ${(hitH[c] / TRIALS * 100).toFixed(1)}%  low ${(hitL[c] / TRIALS * 100).toFixed(1)}%` +
       `   |  P(high set) predicted ${(hp * 100).toFixed(0)}% vs actual ${(freqH * 100).toFixed(0)}%` +
       `   |  P(low set) predicted ${(lp * 100).toFixed(0)}% vs actual ${(freqL * 100).toFixed(0)}%`);
+    worst = Math.max(worst, Math.abs(hp - freqH) * 100, Math.abs(lp - freqL) * 100);
   }
+  console.log(`  worst probability error: ${worst.toFixed(1)} points ${worst <= 10 ? '(PASS, tolerance 10)' : '(FAIL)'}`);
+  if (worst > 10) process.exitCode = 1;
   console.log('');
 }
