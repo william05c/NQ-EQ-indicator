@@ -86,4 +86,74 @@ for (const file of FILES) {
 }
 
 console.log(failed ? `\n${failed} file(s) FAILED` : '\nall files passed');
-process.exit(failed ? 1 : 0);
+if (failed) process.exit(1);
+
+// ---------------- CROSS-FILE identifier check ----------------
+// Catches the bug class where a script references a variable that only exists in
+// a DIFFERENT script (e.g. hiNow10 copied into the unified file as iHi10).
+// Builtins are never declared in any file, so they cannot trigger this.
+function declaredNames(src) {
+  const out = new Set();
+  const lines = src.split(/\r?\n/);
+  for (let raw of lines) {
+    const line = raw.replace(/\/\/.*$/, '');
+    let m = line.match(/^\s*\[([^\]]+)\]\s*=/);
+    if (m) { m[1].split(',').forEach((n) => out.add(n.trim())); continue; }
+    m = line.match(/^\s*(?:var|varip)\s+(?:float|int|bool|string|color|line|label|box|table|polyline)\s+(\w+)\s*=/);
+    if (m) { out.add(m[1]); continue; }
+    m = line.match(/^\s*(\w+)\s*=/);
+    if (m) { out.add(m[1]); continue; }
+    m = line.match(/^\s*(\w+)\s*\(([^)]*)\)\s*=>/);
+    if (m) {
+      out.add(m[1]);
+      m[2].split(',').forEach((a) => { const n = a.trim().split(/\s+/).pop(); if (n) out.add(n); });
+      continue;
+    }
+    m = line.match(/^\s*(\w+)\s*:=\s*/);
+    if (m) { out.add(m[1]); }
+  }
+  return out;
+}
+
+function usedNames(src) {
+  const cleaned = src
+    .replace(/\/\/.*$/gm, '')
+    .replace(/"[^"]*"/g, '""')
+    .replace(/'[^']*'/g, "''");
+  const out = new Set();
+  const re = /([.\w]*)/g;
+  const idRe = /[A-Za-z_]\w*/g;
+  let m;
+  while ((m = idRe.exec(cleaned)) !== null) {
+    const start = m.index;
+    if (start > 0 && cleaned[start - 1] === '.') continue;
+    out.add(m[0]);
+  }
+  return out;
+}
+
+const filesSrc = FILES.map((f) => ({ file: f, src: fs.readFileSync(f, 'utf8') }));
+const declByFile = new Map(filesSrc.map((f) => [f.file, declaredNames(f.src)]));
+const allDecl = new Set();
+declByFile.forEach((s) => s.forEach((n) => allDecl.add(n)));
+
+let leaks = 0;
+for (const { file, src } of filesSrc) {
+  const mine = declByFile.get(file);
+  const leaksHere = [];
+  for (const u of usedNames(src)) {
+    if (mine.has(u)) continue;
+    if (!allDecl.has(u)) continue;
+    leaksHere.push(u);
+  }
+  if (leaksHere.length) {
+    leaks += leaksHere.length;
+    console.log(`${path.basename(file)}: UNDEFINED (declared only in another script): ${leaksHere.join(', ')}`);
+  }
+}
+if (leaks) {
+  console.log(`\n${leaks} undefined identifier(s) - this will not compile`);
+  process.exitCode = 1;
+} else {
+  console.log('cross-file identifier check: ok');
+}

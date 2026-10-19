@@ -264,9 +264,9 @@ if showTable and barstate.islast
         table.cell(t, 0, 1, "Session elapsed", text_color = color.black)
         table.cell(t, 1, 1, str.tostring(elapsed * 100, "#.0") + "%", text_color = color.black)
         table.cell(t, 0, 2, "HIGH will finish", text_color = color.black)
-        table.cell(t, 1, 2, str.tostring(hiNow10, format.mintick) + " to " + str.tostring(hiNow90, format.mintick), text_color = hiCol)
+        table.cell(t, 1, 2, str.tostring(iHi10, format.mintick) + " to " + str.tostring(iHi90, format.mintick), text_color = hiCol)
         table.cell(t, 0, 3, "LOW will finish", text_color = color.black)
-        table.cell(t, 1, 3, str.tostring(loNow10, format.mintick) + " to " + str.tostring(loNow90, format.mintick), text_color = loCol)
+        table.cell(t, 1, 3, str.tostring(iLo10, format.mintick) + " to " + str.tostring(iLo90, format.mintick), text_color = loCol)
         table.cell(t, 0, 4, "High already set", text_color = color.black)
         table.cell(t, 1, 4, str.tostring(pHiSet * 100, "#.0") + "%", text_color = color.black)
         table.cell(t, 0, 5, "Low already set", text_color = color.black)
@@ -294,8 +294,8 @@ if barstate.islast
         label.delete(statLbl)
     if showLabel and useIntraday
         lblTxt = "NOWCAST - " + str.tostring(elapsed * 100, "#") + "% of session\n" +
-          "HIGH will finish " + str.tostring(hiNow10, format.mintick) + " to " + str.tostring(hiNow90, format.mintick) + "\n" +
-          "LOW  will finish " + str.tostring(loNow10, format.mintick) + " to " + str.tostring(loNow90, format.mintick) + "\n" +
+          "HIGH will finish " + str.tostring(iHi10, format.mintick) + " to " + str.tostring(iHi90, format.mintick) + "\n" +
+          "LOW  will finish " + str.tostring(iLo10, format.mintick) + " to " + str.tostring(iLo90, format.mintick) + "\n" +
           "High set " + str.tostring(pHiSet * 100, "#") + "%   Low set " + str.tostring(pLoSet * 100, "#") + "%\n" +
           "Swing left ~" + str.tostring(sigmaRem * z90, "#") + " pts"
         statLbl := label.new(bar_index, hi90, lblTxt, style = label.style_label_down, color = color.new(color.white, 5), textcolor = color.black, size = size.small)
