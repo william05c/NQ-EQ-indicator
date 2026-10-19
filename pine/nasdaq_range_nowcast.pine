@@ -32,6 +32,7 @@ indicator("Daily Range Nowcast (intraday)", "RangeNowcast", overlay = true)
 profileIn = input.string("Auto (by symbol)", "Asset profile", options = ["Auto (by symbol)", "NQ futures (24h)", "ES futures (24h)", "Cash index (RTH)"], group = "Model")
 showBand  = input.bool(true, "Show converging band", group = "Display")
 showTable = input.bool(true, "Show probability table", group = "Display")
+showLabel = input.bool(true, "Show status label on chart", group = "Display")
 hiCol     = input.color(color.new(color.teal, 10), "Upside colour", group = "Display")
 loCol     = input.color(color.new(color.maroon, 10), "Downside colour", group = "Display")
 
@@ -171,6 +172,15 @@ if showTable and barstate.islast
     table.cell(t, 1, 7, str.tostring(oD, format.mintick), text_color = na(oD) ? color.red : color.gray)
     table.cell(t, 0, 8, "Sigma pts", text_color = color.gray)
     table.cell(t, 1, 8, str.tostring(sigmaDay, format.mintick), text_color = color.gray)
+
+// ---------------- status label ----------------
+// The table can be hidden behind the editor panel, so the key numbers are also
+// printed on the chart itself.
+var label statLbl = na
+if showLabel and barstate.islast
+    if not na(statLbl)
+        label.delete(statLbl)
+    statLbl := label.new(bar_index, hiNow90, "elapsed " + str.tostring(elapsed * 100, "#.0") + "%\nhigh set " + str.tostring(pHiSet * 100, "#.0") + "%\nlow set " + str.tostring(pLoSet * 100, "#.0") + "%\nswing left " + str.tostring(sigmaRem * z90, "#") + " pts", style = label.style_label_down, color = color.new(color.white, 5), textcolor = color.black, size = size.small)
 
 // ---------------- timeframe guard ----------------
 // The nowcast only means anything on an intraday chart. Say so loudly instead of
