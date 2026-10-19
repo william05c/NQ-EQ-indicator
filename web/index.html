@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nasdaq Range Forecaster - local dashboard</title>
+<style>
+  :root {
+    --ink: #16202c; --muted: #6b7a8f; --line: #e6ecf3;
+    --hi: #1f6f78; --lo: #8c3b46; --bg: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: #f6f8fb; color: var(--ink);
+    font: 14px/1.45 "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  }
+  header {
+    background: var(--bg); border-bottom: 1px solid var(--line);
+    padding: 18px 26px 14px;
+  }
+  h1 { margin: 0 0 4px; font-size: 19px; letter-spacing: -0.2px; }
+  .sub { color: var(--muted); font-size: 12.5px; }
+  .controls { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
+  select, button {
+    font: inherit; padding: 6px 10px; border: 1px solid #cfd8e3; border-radius: 6px;
+    background: #fff; color: var(--ink); cursor: pointer;
+  }
+  button:hover, select:hover { border-color: #9fb2c8; }
+  main { padding: 18px 26px 40px; max-width: 1500px; margin: 0 auto; }
+  .card { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+  .chartwrap { position: relative; }
+  canvas { width: 100%; display: block; border-radius: 6px; }
+  .chips { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 14px; }
+  .chip {
+    background: #fff; border: 1px solid var(--line); border-radius: 8px;
+    padding: 9px 13px; min-width: 132px;
+  }
+  .chip .k { color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: .4px; }
+  .chip .v { font-size: 17px; font-weight: 600; margin-top: 2px; }
+  .chip.good .v { color: #17795e; }
+  .chip.warn .v { color: #a1561a; }
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 10px; color: var(--muted); font-size: 12.5px; }
+  .swatch { display: inline-block; width: 22px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+  .band { display: inline-block; width: 22px; height: 10px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+  .tooltip {
+    position: absolute; pointer-events: none; background: rgba(22,32,44,.94); color: #fff;
+    padding: 7px 9px; border-radius: 6px; font-size: 12px; line-height: 1.5;
+    transform: translate(-50%, -110%); white-space: nowrap; display: none; z-index: 5;
+  }
+  .tooltip b { font-weight: 600; }
+  .note { color: var(--muted); font-size: 12.5px; margin-top: 14px; }
+  .note a { color: #2a5d9b; }
+  #loading {
+    position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+    background: rgba(246,248,251,.75); border-radius: 8px; font-weight: 600; color: #33506e;
+  }
+  table { border-collapse: collapse; width: 100%; margin-top: 14px; font-size: 13px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .3px; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Nasdaq Range Forecaster - local dashboard</h1>
+  <div class="sub">Daily high/low probability bands | runs entirely offline | no TradingView subscription</div>
+  <div class="controls">
+    <select id="asset"></select>
+    <select id="range">
+      <option value="60">Last 3 months</option>
+      <option value="125" selected>Last 6 months</option>
+      <option value="250">Last 1 year</option>
+      <option value="500">Last 2 years</option>
+      <option value="1250">Last 5 years</option>
+      <option value="99999">All history</option>
+    </select>
+    <button id="rerun">Recompute</button>
+  </div>
+</header>
+
+<main>
+  <div class="chips" id="chips"></div>
+  <div class="card">
+    <div class="chartwrap">
+      <canvas id="chart"></canvas>
+      <div class="tooltip" id="tip"></div>
+      <div id="loading">computing"|</div>
+    </div>
+    <div class="legend">
+      <span><span class="band" style="background:rgba(31,111,120,.18)"></span>80% band for the HIGH</span>
+      <span><span class="band" style="background:rgba(140,59,70,.18)"></span>80% band for the LOW</span>
+      <span><span class="swatch" style="background:#1f6f78"></span>median high</span>
+      <span><span class="swatch" style="background:#8c3b46"></span>median low</span>
+      <span><span class="swatch" style="background:#16202c"></span>close</span>
+    </div>
+  </div>
+
+  <table id="stats">
+    <thead><tr><th>Metric</th><th class="num">Value</th><th>Meaning</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <p class="note">
+    Bands are computed from the session open plus history that closed before it - no lookahead.
+    Coverage is the share of sessions where the actual extreme fell inside the 80% band; a
+    well-calibrated model reads ~80%. Full method and validation:
+    <a href="../docs/01-methodology.md">methodology</a> |
+    <a href="../docs/03-backtests.md">backtests</a> |
+    <a href="../docs/05-limitations.md">limitations</a>.
+  </p>
+</main>
+
+<script src="model.js"></script>
+<script src="data.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const canvas = $('chart');
+  const ctx = canvas.getContext('2d');
+  const tip = $('tip');
+  const cache = new Map();
+  let state = { out: [], label: '', visible: [] };
+
+  const fmt = (v, d) => v == null ? '-' : v.toLocaleString('en-US', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 });
+
+  // ---------- asset selector ----------
+  const keys = Object.keys(window.RANGE_DATA);
+  $('asset').innerHTML = keys
+    .map((k) => `<option value="${k}">${window.RANGE_DATA[k].label}</option>`)
+    .join('');
+
+  // ---------- model ----------
+  function compute(key) {
+    if (cache.has(key)) return cache.get(key);
+    const raw = window.RANGE_DATA[key].rows;
+    const rows = raw.map(([date, open, high, low, close]) => ({ date, open, high, low, close }));
+    const out = RangeModel.run(rows);
+    cache.set(key, out);
+    return out;
+  }
+
+  function chips(out) {
+    const s = RangeModel.stats(out);
+    const last = out[out.length - 1];
+    const pct = (x) => (x * 100).toFixed(1) + '%';
+    const rows = [
+      { k: 'Sessions in view', v: fmt(s.n), cls: '' },
+      { k: 'High inside 80%', v: pct(s.covH), cls: Math.abs(s.covH - 0.8) < 0.05 ? 'good' : 'warn' },
+      { k: 'Low inside 80%', v: pct(s.covL), cls: Math.abs(s.covL - 0.8) < 0.05 ? 'good' : 'warn' },
+      { k: 'Median error high', v: (s.medH * 100).toFixed(2) + '%', cls: '' },
+      { k: 'Median error low', v: (s.medL * 100).toFixed(2) + '%', cls: '' },
+    ];
+    if (last && last.valid) {
+      const rangePct = ((last.hi50 - last.lo50) / last.open * 100).toFixed(2);
+      rows.push({ k: 'Last bar: median range', v: rangePct + '%', cls: '' });
+    }
+    $('chips').innerHTML = rows
+      .map((r) => `<div class="chip ${r.cls}"><div class="k">${r.k}</div><div class="v">${r.v}</div></div>`)
+      .join('');
+  }
+
+  function table(out) {
+    const s = RangeModel.stats(out);
+    const rows = [
+      ['Sessions in view', fmt(s.n), 'Bars currently plotted that have bands'],
+      ['MAE, high', fmt(s.maeH, 1) + ' pts', 'Mean absolute error of the median high'],
+      ['MAE, low', fmt(s.maeL, 1) + ' pts', 'Mean absolute error of the median low'],
+      ['Median error, high', (s.medH * 100).toFixed(2) + '%', 'Typical miss, as % of price'],
+      ['Median error, low', (s.medL * 100).toFixed(2) + '%', 'Typical miss, as % of price'],
+      ['80% coverage, high', (s.covH * 100).toFixed(1) + '%', 'Should be ~80% if calibrated'],
+      ['80% coverage, low', (s.covL * 100).toFixed(1) + '%', 'Should be ~80% if calibrated'],
+    ];
+    $('stats').querySelector('tbody').innerHTML = rows
+      .map(([a, b, c]) => `<tr><td>${a}</td><td class="num">${b}</td><td style="color:#6b7a8f">${c}</td></tr>`)
+      .join('');
+  }
+
+  // ---------- drawing ----------
+  let geom = null;
+
+  function draw() {
+    const out = state.out;
+    if (!out.length) return;
+    const raw = parseInt($('range').value, 10);
+    const slice = out.slice(Math.max(0, out.length - raw)).filter((r) => r.valid);
+    state.visible = slice;
+    if (!slice.length) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const cssW = canvas.parentElement.clientWidth;
+    const cssH = 540;
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    canvas.style.height = cssH + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
+
+    const M = { l: 74, r: 18, t: 16, b: 34 };
+    const pw = cssW - M.l - M.r, ph = cssH - M.t - M.b;
+
+    let lo = Infinity, hi = -Infinity;
+    for (const r of slice) {
+      lo = Math.min(lo, r.lo10, r.low);
+      hi = Math.max(hi, r.hi90, r.high);
+    }
+    const pad = (hi - lo) * 0.05;
+    lo -= pad; hi += pad;
+
+    const X = (i) => M.l + (i / Math.max(1, slice.length - 1)) * pw;
+    const Y = (v) => M.t + (1 - (v - lo) / (hi - lo)) * ph;
+
+    // grid + y labels
+    ctx.font = '11.5px "Segoe UI", Arial, sans-serif';
+    ctx.textBaseline = 'middle';
+    for (let t = 0; t <= 5; t++) {
+      const v = lo + ((hi - lo) * t) / 5;
+      const y = Y(v);
+      ctx.strokeStyle = '#eef2f7';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(M.l, y); ctx.lineTo(cssW - M.r, y); ctx.stroke();
+      ctx.fillStyle = '#8895a7';
+      ctx.textAlign = 'right';
+      ctx.fillText(Math.round(v).toLocaleString('en-US'), M.l - 8, y);
+    }
+
+    // x labels (year starts)
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    let lastYear = '';
+    for (let i = 0; i < slice.length; i++) {
+      const y = slice[i].date.slice(0, 4);
+      if (y !== lastYear && slice[i].date.slice(5, 7) === '01') {
+        lastYear = y;
+        const x = X(i);
+        ctx.strokeStyle = '#cfd8e3';
+        ctx.beginPath(); ctx.moveTo(x, M.t + ph); ctx.lineTo(x, M.t + ph + 4); ctx.stroke();
+        ctx.fillStyle = '#8895a7';
+        ctx.fillText(y, x, M.t + ph + 8);
+      }
+    }
+
+    // bands
+    const band = (topKey, botKey, fill) => {
+      ctx.beginPath();
+      slice.forEach((r, i) => { const x = X(i), y = Y(r[topKey]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+      for (let i = slice.length - 1; i >= 0; i--) ctx.lineTo(X(i), Y(slice[i][botKey]));
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+    };
+    band('hi90', 'hi10', 'rgba(31,111,120,0.16)');
+    band('lo90', 'lo10', 'rgba(140,59,70,0.16)');
+
+    // lines
+    const line = (key, color, width) => {
+      ctx.beginPath();
+      slice.forEach((r, i) => { const x = X(i), y = Y(r[key]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+      ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineJoin = 'round';
+      ctx.stroke();
+    };
+    line('hi50', '#1f6f78', 1.8);
+    line('lo50', '#8c3b46', 1.8);
+    line('close', '#16202c', 1.6);
+
+    // frame
+    ctx.strokeStyle = '#cfd8e3';
+    ctx.beginPath(); ctx.moveTo(M.l, M.t + ph); ctx.lineTo(cssW - M.r, M.t + ph); ctx.stroke();
+
+    geom = { M, pw, ph, cssW, X, Y, slice };
+  }
+
+  // ---------- hover ----------
+  canvas.addEventListener('mousemove', (e) => {
+    if (!geom) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const { M, pw, slice } = geom;
+    if (mx < M.l || mx > M.l + pw) { tip.style.display = 'none'; return; }
+    const idx = Math.round(((mx - M.l) / pw) * (slice.length - 1));
+    const r = slice[Math.max(0, Math.min(slice.length - 1, idx))];
+    const pct = (v) => v.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    const hit = (ok) => ok ? '<span style="color:#7fd6b5">inside</span>' : '<span style="color:#ff9d8a">outside</span>';
+    tip.innerHTML =
+      `<b>${r.date}</b><br>` +
+      `high ${pct(r.high)} | band ${pct(r.hi10)}-${pct(r.hi90)} ${hit(r.hitH)}<br>` +
+      `low ${pct(r.low)} | band ${pct(r.lo10)}-${pct(r.lo90)} ${hit(r.hitL)}<br>` +
+      `close ${pct(r.close)}`;
+    tip.style.display = 'block';
+    tip.style.left = (geom.X(idx) / (geom.cssW) * 100) + '%';
+    tip.style.top = '10px';
+  });
+  canvas.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+
+  // ---------- orchestration ----------
+  function panels() {
+    if (!state.visible.length) return;
+    chips(state.visible);
+    table(state.visible);
+  }
+
+  function refresh() {
+    const key = $('asset').value;
+    $('loading').style.display = 'flex';
+    setTimeout(() => {
+      state.out = compute(key);
+      state.label = key;
+      draw();
+      panels();
+      $('loading').style.display = 'none';
+    }, 20);
+  }
+
+  $('asset').addEventListener('change', refresh);
+  $('range').addEventListener('change', () => { draw(); panels(); });
+  $('rerun').addEventListener('click', () => { cache.delete($('asset').value); refresh(); });
+  window.addEventListener('resize', () => { draw(); });
+
+  refresh();
+})();
+</script>
+</body>
+</html>
+

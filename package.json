@@ -8,6 +8,7 @@
     "refresh": "node src/refresh_ixic.js",
     "forecast": "node src/range_forecast.js",
     "benchmark": "node src/benchmark.js",
+    "dashboard": "node src/build_dashboard_data.js",
     "backtest": "node src/backtest_10y.js",
     "compare": "node src/model_compare.js",
     "futures": "node src/nq_es_indicator.js",
@@ -32,4 +33,5 @@
     "node": ">=18"
   }
 }
+
 

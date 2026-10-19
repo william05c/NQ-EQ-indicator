@@ -1,4 +1,4 @@
-﻿// Range / high-low band forecaster for the Nasdaq Composite.
+// Range / high-low band forecaster for the Nasdaq Composite.
 //
 // Two models, refit monthly on an expanding window:
 //   u = (high - open) / open     "upside excursion from the open"

@@ -1,4 +1,4 @@
-﻿# Two-panel backtest chart: accuracy by year (top) and band calibration by year (bottom).
+# Two-panel backtest chart: accuracy by year (top) and band calibration by year (bottom).
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 

@@ -1,13 +1,13 @@
-﻿//@version=5
+//@version=5
 // ============================================================================
-//  Daily Range Forecaster â€” NQ / ES / Index
+//  Daily Range Forecaster - NQ / ES / Index
 // ----------------------------------------------------------------------------
 //  Forecasts where today's HIGH and LOW are likely to sit, as calibrated
 //  probability bands, using only the chart's own daily bars.
 //
 //  Method: two log-linear models predict the upside and downside excursions
 //  from the session open. Bands come from the empirical quantiles of the
-//  model's own recent errors, recomputed every N bars â€” so they adapt to the
+//  model's own recent errors, recomputed every N bars - so they adapt to the
 //  current volatility regime without any external data.
 //
 //  Coefficients were fitted offline on:
@@ -25,7 +25,7 @@
 //  It does not predict direction and cannot call the exact high.
 // ============================================================================
 
-indicator("Daily Range Forecaster â€” NQ / ES / Index", "RangeFcst", overlay = true, max_bars_back = 3000)
+indicator("Daily Range Forecaster - NQ / ES / Index", "RangeFcst", overlay = true, max_bars_back = 3000)
 
 // ---------------- inputs ----------------
 profileIn = input.string("Auto (by symbol)", "Asset profile", options = ["Auto (by symbol)", "NQ futures (24h)", "ES futures (24h)", "Cash index (RTH)"], group = "Model")

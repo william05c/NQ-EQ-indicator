@@ -45,6 +45,30 @@ Editor on a **daily** chart of `NQ1!` or `ES1!`. Full guide in
 The script auto-detects the instrument, draws 10/50/90 percentile bands for the high and low,
 and shows a live calibration table so you can verify the hit-rate yourself.
 
+### No subscription? Use the local dashboard
+
+TradingView's free plan caps indicators per chart (2) and saved scripts. If you hit that wall,
+you don't need TradingView at all — the repo ships a standalone dashboard:
+
+**Open [`web/index.html`](web/index.html)** by double-clicking. It runs offline, no install,
+no account.
+
+![Local dashboard](charts/dashboard.png)
+
+- Asset selector: Nasdaq Composite, NQ, ES
+- Zoom presets from 3 months to full history
+- Hover any bar for that session's bands and whether the high/low landed inside
+- Live calibration: coverage and median error recomputed for whatever is on screen
+
+It uses the same model code as the research scripts (`web/model.js`), and reproduces the
+published scorecard exactly. If the data updates, rebuild the embedded copy with
+`node src/build_dashboard_data.js`.
+
+**Other platforms** if you prefer a broker-integrated chart: NinjaTrader 8 (free, C#),
+thinkorswim (free with a Schwab account, thinkScript), QuantConnect (free tier, Python/LEAN),
+MetaTrader 5 (free, MQL5). All can implement this model — it is two regressions and a
+percentile.
+
 ## Repository map
 
 ```

@@ -1,4 +1,4 @@
-﻿# Render the Nasdaq Composite CSV to a PNG chart using GDI+ (no external deps).
+# Render the Nasdaq Composite CSV to a PNG chart using GDI+ (no external deps).
 # Monthly high/low range bars + month-end close line.
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing

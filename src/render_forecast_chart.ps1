@@ -1,4 +1,4 @@
-﻿# Predicted vs realized daily range, rendered to PNG with GDI+.
+# Predicted vs realized daily range, rendered to PNG with GDI+.
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 

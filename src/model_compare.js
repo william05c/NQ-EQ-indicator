@@ -1,4 +1,4 @@
-﻿// Does 24 years of history actually improve accuracy? And do NQ/ES need their own data?
+// Does 24 years of history actually improve accuracy? And do NQ/ES need their own data?
 // Runs the identical walk-forward range model under different training histories and assets.
 const fs = require('fs');
 const path = require('path');

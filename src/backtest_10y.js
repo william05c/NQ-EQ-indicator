@@ -1,4 +1,4 @@
-﻿// 10-year backtest: our range model vs the standard benchmarks a desk would use.
+// 10-year backtest: our range model vs the standard benchmarks a desk would use.
 // Window: 2016-10-18 .. 2026-10-16 (the last 10 years of the dataset).
 // Models compared, all walk-forward with monthly refits and no lookahead:
 //   ours   - log-linear excursion model (see range_forecast.js)

@@ -1,4 +1,4 @@
-﻿# Histogram: where does the daily high sit inside the day's range?
+# Histogram: where does the daily high sit inside the day's range?
 # w = (high - open) / (high - low).  If the range were known in advance, w is all that is left.
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
