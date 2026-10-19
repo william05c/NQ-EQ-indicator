@@ -142,13 +142,18 @@ pLoSet   = math.min(math.max(1.0 - pNewLow, 0.0), 1.0)
 
 // ---------------- plots ----------------
 showIt = showBand
-// Ordered and labelled so the legend reads top-down and cannot be misread
-plot(showIt ? hiNow90 : na, "High 90", color = hiCol, linewidth = 1)
-plot(showIt ? hiNow50 : na, "High 50", color = hiCol, linewidth = 2)
-plot(showIt ? hiNow10 : na, "High 10", color = color.new(hiCol, 60), linewidth = 1)
-plot(showIt ? loNow90 : na, "Low 90",  color = color.new(loCol, 60), linewidth = 1)
-plot(showIt ? loNow50 : na, "Low 50",  color = loCol, linewidth = 2)
-plot(showIt ? loNow10 : na, "Low 10",  color = loCol, linewidth = 1)
+// Filled bands (not just lines) so it reads the same way as the daily script:
+// a shaded zone per side, with the median running through it.
+pHi90 = plot(showIt ? hiNow90 : na, "High 90", color = color.new(hiCol, 30), linewidth = 1)
+pHi50 = plot(showIt ? hiNow50 : na, "High 50", color = hiCol, linewidth = 2)
+pHi10 = plot(showIt ? hiNow10 : na, "High 10", color = color.new(hiCol, 70), linewidth = 1)
+pLo90 = plot(showIt ? loNow90 : na, "Low 90",  color = color.new(loCol, 70), linewidth = 1)
+pLo50 = plot(showIt ? loNow50 : na, "Low 50",  color = loCol, linewidth = 2)
+pLo10 = plot(showIt ? loNow10 : na, "Low 10",  color = color.new(loCol, 30), linewidth = 1)
+fill(pHi90, pHi10, color = color.new(hiCol, 90), title = "Upside 80% zone")
+fill(pLo90, pLo10, color = color.new(loCol, 90), title = "Downside 80% zone")
+plot(showIt ? hiNow50 : na, "High median", color = color.new(color.white, 45), linewidth = 1)
+plot(showIt ? loNow50 : na, "Low median",  color = color.new(color.white, 45), linewidth = 1)
 
 // ---------------- table ----------------
 var table t = table.new(position.top_right, 2, 9, border_width = 1)
