@@ -8,7 +8,9 @@
 //    DAILY chart   -> per-bar band: a shaded 80% zone around every session's
 //                     high/low, plus medians and a next-session projection.
 //    INTRADAY      -> converging nowcast: where today's extremes will end up,
-//                     plus P(high already set) / P(low already set).
+//                     the chance of a NEW high / NEW low, and which side has
+//                     room left. Read it as "which way can price still travel",
+//                     NOT as "chance price goes up".
 //
 //  Daily maths: two log-linear models for (high-open)/open and (open-low)/open,
 //  bands from the empirical quantiles of the model's own recent errors.
