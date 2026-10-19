@@ -10,6 +10,7 @@ const path = require('path');
 const FILES = [
   path.join(__dirname, '..', 'pine', 'nasdaq_range_forecaster.pine'),
   path.join(__dirname, '..', 'pine', 'nasdaq_range_intraday.pine'),
+  path.join(__dirname, '..', 'pine', 'nasdaq_range_nowcast.pine'),
 ];
 
 let failed = 0;
