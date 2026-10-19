@@ -88,8 +88,10 @@ muD = c0d + c1d * x1 + c2d * x2 + c3d * x3 + c4d * x4
 dayHi50  = oD * (1.0 + capExc(muU + sU50))
 dayLo50  = oD * (1.0 - capExc(muD + sD50))
 sigmaRaw = (dayHi50 - dayLo50) / 1.596            // Feller: E[range] = 1.596 * sigma
-// sanity: a daily sigma above 8% of price is corrupt data, not a forecast
-sigmaDay = sigmaRaw > 0 and sigmaRaw < oD * 0.08 ? sigmaRaw : na
+// Never na: an na sigma would silently blank the table and the plots on any bar
+// where the daily fetch hiccups. Clamp to [0, 8% of price] instead.
+px       = nz(oD, close)
+sigmaDay = math.min(math.max(nz(sigmaRaw, px * 0.011), 0.0), px * 0.08)
 
 // ---------------- elapsed fraction of the trading day ----------------
 // Futures trade a 23h day (18:00 -> 17:00 ET); cash indices 6.5h. Using the cash
@@ -138,17 +140,18 @@ pHiSet   = math.min(math.max(1.0 - pNewHigh, 0.0), 1.0)
 pLoSet   = math.min(math.max(1.0 - pNewLow, 0.0), 1.0)
 
 // ---------------- plots ----------------
-showIt = showBand and not na(sigmaDay)
-plot(showIt ? hiNow90 : na, "Final high p90", color = hiCol, linewidth = 1)
-plot(showIt ? hiNow10 : na, "Final high p10", color = color.new(hiCol, 60), linewidth = 1)
-plot(showIt ? hiNow50 : na, "Final high median", color = hiCol, linewidth = 2)
-plot(showIt ? loNow90 : na, "Final low p90", color = color.new(loCol, 60), linewidth = 1)
-plot(showIt ? loNow10 : na, "Final low p10", color = loCol, linewidth = 1)
-plot(showIt ? loNow50 : na, "Final low median", color = loCol, linewidth = 2)
+showIt = showBand
+// Ordered and labelled so the legend reads top-down and cannot be misread
+plot(showIt ? hiNow90 : na, "High 90", color = hiCol, linewidth = 1)
+plot(showIt ? hiNow50 : na, "High 50", color = hiCol, linewidth = 2)
+plot(showIt ? hiNow10 : na, "High 10", color = color.new(hiCol, 60), linewidth = 1)
+plot(showIt ? loNow90 : na, "Low 90",  color = color.new(loCol, 60), linewidth = 1)
+plot(showIt ? loNow50 : na, "Low 50",  color = loCol, linewidth = 2)
+plot(showIt ? loNow10 : na, "Low 10",  color = loCol, linewidth = 1)
 
 // ---------------- table ----------------
 var table t = table.new(position.top_right, 2, 6, border_width = 1)
-if showTable and barstate.islast and not na(sigmaDay)
+if showTable and barstate.islast
     table.cell(t, 0, 0, "Nowcast", bgcolor = color.new(color.gray, 85), text_color = color.black)
     table.cell(t, 1, 0, prof, bgcolor = color.new(color.gray, 85), text_color = color.black)
     table.cell(t, 0, 1, "Session elapsed", text_color = color.black)
