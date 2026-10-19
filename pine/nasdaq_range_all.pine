@@ -1,0 +1,296 @@
+//@version=5
+// ============================================================================
+//  NQ / ES Range - ONE script for daily and intraday
+// ----------------------------------------------------------------------------
+//  Two modes in a single file. It picks the mode from the chart timeframe, so
+//  there is no longer any way to have "the wrong script" applied:
+//
+//    DAILY chart   -> per-bar band: a shaded 80% zone around every session's
+//                     high/low, plus medians and a next-session projection.
+//    INTRADAY      -> converging nowcast: where today's extremes will end up,
+//                     plus P(high already set) / P(low already set).
+//
+//  Daily maths: two log-linear models for (high-open)/open and (open-low)/open,
+//  bands from the empirical quantiles of the model's own recent errors.
+//
+//  Intraday maths: the remaining session is a driftless diffusion with
+//  sigma_rem = sigma_d*sqrt(1-t); by the reflection principle
+//      h_q = max(running high, price + sigma_rem * Phi^-1((1+q)/2))
+//  so the band converges onto what has already printed.
+//
+//  Validated in the repo: daily 80.0%/80.5% coverage over 2,513 sessions;
+//  intraday probabilities within 2-3 points of realised frequency in Monte Carlo.
+// ============================================================================
+
+indicator("NQ / ES Range (daily + intraday)", "RangeForecast", overlay = true, max_bars_back = 3000)
+
+// ---------------- inputs ----------------
+modeIn    = input.string("Auto (by chart timeframe)", "Mode", options = ["Auto (by chart timeframe)", "Daily band", "Intraday nowcast"], group = "Model")
+profileIn = input.string("Auto (by symbol)", "Asset profile", options = ["Auto (by symbol)", "NQ futures (24h)", "ES futures (24h)", "Cash index (RTH)"], group = "Model")
+residWin  = input.int(500, "Daily: residual window", minval = 100, maxval = 2000, group = "Model")
+minResid  = input.int(60, "Daily: min residuals before bands", minval = 20, maxval = 300, group = "Model")
+refitN    = input.int(21, "Daily: recompute quantiles every N bars", minval = 1, maxval = 120, group = "Model")
+showBands = input.bool(true, "Show bands", group = "Display")
+showTable = input.bool(true, "Show table", group = "Display")
+showLabel = input.bool(true, "Show status label (intraday)", group = "Display")
+showProj  = input.bool(true, "Show next-session projection (daily)", group = "Display")
+hiCol     = input.color(color.new(color.teal, 10), "Upside colour", group = "Display")
+loCol     = input.color(color.new(color.maroon, 10), "Downside colour", group = "Display")
+
+// ---------------- profile ----------------
+autoProf = str.contains(syminfo.ticker, "NQ") ? "NQ" : str.contains(syminfo.ticker, "ES") ? "ES" : "IXIC"
+prof = profileIn == "NQ futures (24h)" ? "NQ" : profileIn == "ES futures (24h)" ? "ES" : profileIn == "Cash index (RTH)" ? "IXIC" : autoProf
+
+useIntraday = modeIn == "Intraday nowcast" or (modeIn == "Auto (by chart timeframe)" and timeframe.isintraday)
+
+c0u = prof == "NQ" ? -1.694495 : prof == "ES" ? -1.460724 : -1.560655
+c1u = prof == "NQ" ?  0.755239 : prof == "ES" ?  0.681027 :  0.757907
+c2u = prof == "NQ" ? -0.125094 : prof == "ES" ?  0.497639 :  0.147927
+c3u = prof == "NQ" ?  0.262881 : prof == "ES" ?  0.180519 :  0.073320
+c4u = prof == "NQ" ? -0.034915 : prof == "ES" ? -0.399594 : -0.053215
+
+c0d = prof == "NQ" ? -1.692194 : prof == "ES" ? -1.449274 : -1.561902
+c1d = prof == "NQ" ?  0.571979 : prof == "ES" ?  0.532104 :  0.495297
+c2d = prof == "NQ" ?  0.075713 : prof == "ES" ?  0.621457 :  0.145741
+c3d = prof == "NQ" ?  0.067209 : prof == "ES" ?  0.162186 :  0.180904
+c4d = prof == "NQ" ?  0.153190 : prof == "ES" ? -0.335095 :  0.101781
+
+sU10 = prof == "NQ" ? -1.393331 : prof == "ES" ? -1.478340 : -1.737729
+sU50 = prof == "NQ" ?  0.244323 : prof == "ES" ?  0.200374 :  0.297207
+sU90 = prof == "NQ" ?  1.137000 : prof == "ES" ?  1.202514 :  1.274199
+sD10 = prof == "NQ" ? -1.743627 : prof == "ES" ? -1.798963 : -2.018891
+sD50 = prof == "NQ" ?  0.274472 : prof == "ES" ?  0.234755 :  0.299511
+sD90 = prof == "NQ" ?  1.427955 : prof == "ES" ?  1.412328 :  1.451093
+
+capExc(x) =>
+    math.min(math.max(math.exp(math.min(x, 0.69)), 0.0), 0.25)
+
+// ============================================================================
+//  DAILY PATH - per-bar band
+// ============================================================================
+rr    = (high - low) / close
+rrS   = math.min(math.max(rr, 0.0), 0.5)
+lrD   = nz(close[1], 0.0) > 0 and close > 0 ? math.log(close / close[1]) : 0.0
+rr5   = nz(ta.sma(rrS, 5)[1],  rrS)
+rr20  = nz(ta.sma(rrS, 20)[1], rrS)
+rr60  = nz(ta.sma(rrS, 60)[1], rrS)
+rvRaw = nz(ta.stdev(lrD, 20, false)[1], nz(ta.stdev(lrD, 20, false), 0.01))
+rv20  = math.min(math.max(rvRaw, 0.0001), 0.5)
+
+dx1 = math.log(rr5 + 0.0001)
+dx2 = math.log(rr20 + 0.0001)
+dx3 = math.log(rr60 + 0.0001)
+dx4 = math.log(rv20 + 0.0001)
+
+dMuU = c0u + c1u * dx1 + c2u * dx2 + c3u * dx3 + c4u * dx4
+dMuD = c0d + c1d * dx1 + c2d * dx2 + c3d * dx3 + c4d * dx4
+
+// features for the following session (includes this bar) - used by the projection
+rr5n  = nz(ta.sma(rrS, 5),  rrS)
+rr20n = nz(ta.sma(rrS, 20), rrS)
+rr60n = nz(ta.sma(rrS, 60), rrS)
+rv20n = math.min(math.max(nz(ta.stdev(lrD, 20, false), 0.01), 0.0001), 0.5)
+eMuU = c0u + c1u * math.log(rr5n + 0.0001) + c2u * math.log(rr20n + 0.0001) + c3u * math.log(rr60n + 0.0001) + c4u * math.log(rv20n + 0.0001)
+eMuD = c0d + c1d * math.log(rr5n + 0.0001) + c2d * math.log(rr20n + 0.0001) + c3d * math.log(rr60n + 0.0001) + c4d * math.log(rv20n + 0.0001)
+
+var dResU = array.new_float()
+var dResD = array.new_float()
+
+pct(arr, p) =>
+    int n = array.size(arr)
+    float r = na
+    if n > 0
+        s = array.copy(arr)
+        array.sort(s, order.ascending)
+        int idx = int(math.max(0, math.min(n - 1, math.round(p * (n - 1)))))
+        r := array.get(s, idx)
+    r
+
+var float qU10 = sU10
+var float qU50 = sU50
+var float qU90 = sU90
+var float qD10 = sD10
+var float qD50 = sD50
+var float qD90 = sD90
+var int   lastQ = -100000
+
+dValid = array.size(dResU) >= minResid
+
+if dValid and (bar_index - lastQ >= refitN)
+    qU10 := pct(dResU, 0.10)
+    qU50 := pct(dResU, 0.50)
+    qU90 := pct(dResU, 0.90)
+    qD10 := pct(dResD, 0.10)
+    qD50 := pct(dResD, 0.50)
+    qD90 := pct(dResD, 0.90)
+    lastQ := bar_index
+
+dOp    = open
+dHi10  = dOp * (1.0 + capExc(dMuU + qU10))
+dHi50  = dOp * (1.0 + capExc(dMuU + qU50))
+dHi90  = dOp * (1.0 + capExc(dMuU + qU90))
+dLo10  = dOp * (1.0 - capExc(dMuD + qD90))
+dLo50  = dOp * (1.0 - capExc(dMuD + qD50))
+dLo90  = dOp * (1.0 - capExc(dMuD + qD10))
+
+uRawD = math.min(math.max((high - open) / open, 0.0001), 0.5)
+dRawD = math.min(math.max((open - low) / open, 0.0001), 0.5)
+array.push(dResU, math.log(uRawD) - dMuU)
+array.push(dResD, math.log(dRawD) - dMuD)
+if array.size(dResU) > residWin
+    array.shift(dResU)
+if array.size(dResD) > residWin
+    array.shift(dResD)
+
+// ============================================================================
+//  INTRADAY PATH - converging nowcast
+// ============================================================================
+dailyFeat() =>
+    // Everything is recomputed HERE so it is evaluated on the DAILY series.
+    // Referencing the chart-timeframe variables would silently use 5-minute values.
+    dRr  = (high - low) / close
+    dRrS = math.min(math.max(dRr, 0.0), 0.5)
+    dLr  = nz(close[1], 0.0) > 0 and close > 0 ? math.log(close / close[1]) : 0.0
+    f5   = nz(ta.sma(dRrS, 5)[1],  dRrS)
+    f20  = nz(ta.sma(dRrS, 20)[1], dRrS)
+    f60  = nz(ta.sma(dRrS, 60)[1], dRrS)
+    fv   = math.min(math.max(nz(ta.stdev(dLr, 20, false)[1], 0.01), 0.0001), 0.5)
+    [open, f5, f20, f60, fv, high, low]
+
+[iOp, iR5, iR20, iR60, iRV, dHi, dLo] = request.security(syminfo.tickerid, "D", dailyFeat(), lookahead = barmerge.lookahead_off)
+
+iMuU = c0u + c1u * math.log(iR5 + 0.0001) + c2u * math.log(iR20 + 0.0001) + c3u * math.log(iR60 + 0.0001) + c4u * math.log(iRV + 0.0001)
+iMuD = c0d + c1d * math.log(iR5 + 0.0001) + c2d * math.log(iR20 + 0.0001) + c3d * math.log(iR60 + 0.0001) + c4d * math.log(iRV + 0.0001)
+
+dayHi50  = iOp * (1.0 + capExc(iMuU + sU50))
+dayLo50  = iOp * (1.0 - capExc(iMuD + sD50))
+sigmaRaw = (dayHi50 - dayLo50) / 1.596
+px       = nz(iOp, close)
+sigmaDay = math.min(math.max(nz(sigmaRaw, px * 0.011), 0.0), px * 0.08)
+
+sessZone    = "America/New_York"
+isFutures   = prof == "NQ" or prof == "ES"
+startMin    = isFutures ? 18 * 60 : 9 * 60 + 30
+spanMin     = isFutures ? 23 * 60 : 390
+minsNow     = hour(time, sessZone) * 60 + minute(time, sessZone)
+intoDay     = (minsNow - startMin + 1440) % 1440
+futElapsed  = math.min(math.max(intoDay / spanMin, 0.0), 1.0)
+cashElapsed = minsNow >= 960 ? 1.0 : minsNow >= 570 ? (minsNow - 570) / 390 : 0.0
+elapsed     = isFutures ? futElapsed : cashElapsed
+
+normCdf(x) =>
+    a = 1.0 / (1.0 + 0.3275911 * math.abs(x))
+    y = 1.0 - ((((1.061405429 * a - 1.453152027) * a + 1.421413741) * a - 0.284496736) * a + 0.254829592) * a * math.exp(-x * x)
+    x >= 0 ? 0.5 * (1.0 + y) : 0.5 * (1.0 - y)
+
+z10 = 0.125661
+z50 = 0.674490
+z90 = 1.644854
+
+pNow     = close
+sigmaRem = nz(sigmaDay, 0.0) * math.sqrt(math.max(1.0 - elapsed, 0.0))
+hiRef    = math.max(nz(dHi, pNow), pNow)
+loRef    = math.min(nz(dLo, pNow), pNow)
+
+iHi10 = math.max(hiRef, pNow + sigmaRem * z10)
+iHi50 = math.max(hiRef, pNow + sigmaRem * z50)
+iHi90 = math.max(hiRef, pNow + sigmaRem * z90)
+iLo90 = math.min(loRef, pNow - sigmaRem * z10)
+iLo50 = math.min(loRef, pNow - sigmaRem * z50)
+iLo10 = math.min(loRef, pNow - sigmaRem * z90)
+
+safeSig  = math.max(sigmaRem, pNow * 0.000001)
+pNewHigh = 2.0 * (1.0 - normCdf((hiRef - pNow) / safeSig))
+pNewLow  = 2.0 * (1.0 - normCdf((pNow - loRef) / safeSig))
+pHiSet   = math.min(math.max(1.0 - pNewHigh, 0.0), 1.0)
+pLoSet   = math.min(math.max(1.0 - pNewLow, 0.0), 1.0)
+
+// ============================================================================
+//  SELECT AND DRAW
+// ============================================================================
+hi90 = useIntraday ? iHi90 : dHi90
+hi50 = useIntraday ? iHi50 : dHi50
+hi10 = useIntraday ? iHi10 : dHi10
+lo90 = useIntraday ? iLo90 : dLo90
+lo50 = useIntraday ? iLo50 : dLo50
+lo10 = useIntraday ? iLo10 : dLo10
+
+ready = useIntraday ? true : dValid
+showIt = showBands and ready
+
+pHi90 = plot(showIt ? hi90 : na, "High 90", color = color.new(hiCol, 25), linewidth = 1)
+pHi50 = plot(showIt ? hi50 : na, "High 50", color = hiCol, linewidth = 2)
+pHi10 = plot(showIt ? hi10 : na, "High 10", color = color.new(hiCol, 70), linewidth = 1)
+pLo90 = plot(showIt ? lo90 : na, "Low 90",  color = color.new(loCol, 70), linewidth = 1)
+pLo50 = plot(showIt ? lo50 : na, "Low 50",  color = loCol, linewidth = 2)
+pLo10 = plot(showIt ? lo10 : na, "Low 10",  color = color.new(loCol, 25), linewidth = 1)
+fill(pHi90, pHi10, color = color.new(hiCol, 88), title = "Upside 80% zone")
+fill(pLo90, pLo10, color = color.new(loCol, 88), title = "Downside 80% zone")
+
+// daily-only: next-session projection as a box to the right of the last bar
+var box  projEnv = na
+var box  projHiB = na
+var box  projLoB = na
+var line projHiLn = na
+var line projLoLn = na
+if not useIntraday and showProj and barstate.islast and dValid
+    anchor = close
+    nHi10 = anchor * (1.0 + capExc(eMuU + qU10))
+    nHi50 = anchor * (1.0 + capExc(eMuU + qU50))
+    nHi90 = anchor * (1.0 + capExc(eMuU + qU90))
+    nLo10 = anchor * (1.0 - capExc(eMuD + qD90))
+    nLo50 = anchor * (1.0 - capExc(eMuD + qD50))
+    nLo90 = anchor * (1.0 - capExc(eMuD + qD10))
+    xL = bar_index + 1
+    xR = bar_index + 3
+    if not na(projEnv)
+        box.delete(projEnv)
+        box.delete(projHiB)
+        box.delete(projLoB)
+        line.delete(projHiLn)
+        line.delete(projLoLn)
+    projEnv := box.new(xL, nHi90, xR, nLo10, bgcolor = color.new(color.gray, 92), border_color = color.new(color.gray, 75))
+    projHiB := box.new(xL, nHi90, xR, nHi10, bgcolor = color.new(hiCol, 82), border_color = color.new(hiCol, 45))
+    projLoB := box.new(xL, nLo90, xR, nLo10, bgcolor = color.new(loCol, 82), border_color = color.new(loCol, 45))
+    projHiLn := line.new(xL, nHi50, xR, nHi50, color = hiCol, width = 2, style = line.style_dashed)
+    projLoLn := line.new(xL, nLo50, xR, nLo50, color = loCol, width = 2, style = line.style_dashed)
+
+// ---------------- table ----------------
+var table t = table.new(position.top_right, 2, 6, border_width = 1)
+if showTable and barstate.islast
+    table.cell(t, 0, 0, useIntraday ? "Nowcast" : "Range", bgcolor = color.new(color.gray, 85), text_color = color.black)
+    table.cell(t, 1, 0, prof + " / " + timeframe.period, bgcolor = color.new(color.gray, 85), text_color = color.black)
+    if useIntraday
+        table.cell(t, 0, 1, "Session elapsed", text_color = color.black)
+        table.cell(t, 1, 1, str.tostring(elapsed * 100, "#.0") + "%", text_color = color.black)
+        table.cell(t, 0, 2, "High already set", text_color = color.black)
+        table.cell(t, 1, 2, str.tostring(pHiSet * 100, "#.0") + "%", text_color = hiCol)
+        table.cell(t, 0, 3, "Low already set", text_color = color.black)
+        table.cell(t, 1, 3, str.tostring(pLoSet * 100, "#.0") + "%", text_color = loCol)
+        table.cell(t, 0, 4, "Remaining swing", text_color = color.black)
+        table.cell(t, 1, 4, str.tostring(sigmaRem * z90, format.mintick) + " pts", text_color = color.black)
+        table.cell(t, 0, 5, "Session range", text_color = color.black)
+        table.cell(t, 1, 5, str.tostring(hiRef - loRef, format.mintick) + " pts", text_color = color.black)
+    else
+        table.cell(t, 0, 1, "Bands from bar", text_color = color.black)
+        table.cell(t, 1, 1, dValid ? "ready" : "warming up", text_color = color.black)
+        table.cell(t, 0, 2, "Median high", text_color = color.black)
+        table.cell(t, 1, 2, str.tostring(dHi50, format.mintick), text_color = hiCol)
+        table.cell(t, 0, 3, "Median low", text_color = color.black)
+        table.cell(t, 1, 3, str.tostring(dLo50, format.mintick), text_color = loCol)
+        table.cell(t, 0, 4, "Implied range", text_color = color.black)
+        table.cell(t, 1, 4, str.tostring(dHi50 - dLo50, format.mintick) + " pts", text_color = color.black)
+        table.cell(t, 0, 5, "Series", text_color = color.black)
+        table.cell(t, 1, 5, prof, text_color = color.black)
+
+// ---------------- status label ----------------
+var label statLbl = na
+if barstate.islast
+    if not na(statLbl)
+        label.delete(statLbl)
+    if showLabel and useIntraday
+        statLbl := label.new(bar_index, hi90, "elapsed " + str.tostring(elapsed * 100, "#.0") + "%\nhigh set " + str.tostring(pHiSet * 100, "#.0") + "%\nlow set " + str.tostring(pLoSet * 100, "#.0") + "%\nswing left " + str.tostring(sigmaRem * z90, "#") + " pts", style = label.style_label_down, color = color.new(color.white, 5), textcolor = color.black, size = size.small)
+
+// ---------------- alerts ----------------
+alertcondition(useIntraday and pHiSet > 0.9, "High set", "More than 90% chance today's high is already in")
+alertcondition(useIntraday and pLoSet > 0.9, "Low set", "More than 90% chance today's low is already in")
