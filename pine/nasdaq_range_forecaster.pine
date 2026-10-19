@@ -208,10 +208,10 @@ if barstate.islast and showNext and showBands and validBands
     // Features for the NEXT session must include the bar that just closed.
     // The in-sample muU/muD above are shifted by one bar on purpose (no lookahead
     // when scoring that bar), so they cannot be reused here.
-    rr5n  = nz(ta.sma(rr, 5),  rr)
-    rr20n = nz(ta.sma(rr, 20), rr)
-    rr60n = nz(ta.sma(rr, 60), rr)
-    rv20n = nz(ta.stdev(lr, 20, false), 0.01)
+    rr5n  = nz(ta.sma(rrS, 5),  rrS)
+    rr20n = nz(ta.sma(rrS, 20), rrS)
+    rr60n = nz(ta.sma(rrS, 60), rrS)
+    rv20n = math.min(math.max(nz(ta.stdev(lr, 20, false), 0.01), 0.0001), 0.5)
     n1 = math.log(rr5n + 0.0001)
     n2 = math.log(rr20n + 0.0001)
     n3 = math.log(rr60n + 0.0001)
