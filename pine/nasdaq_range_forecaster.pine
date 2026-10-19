@@ -68,11 +68,16 @@ sD90 = prof == "NQ" ?  1.427955 : prof == "ES" ?  1.412328 :  1.451093
 
 // ---------------- features (all from data before this bar) ----------------
 rr   = (high - low) / close
-lr   = math.log(close / close[1])
-rr5  = nz(ta.sma(rr, 5)[1],  rr)
-rr20 = nz(ta.sma(rr, 20)[1], rr)
-rr60 = nz(ta.sma(rr, 60)[1], rr)
-rv20 = nz(ta.stdev(lr, 20, false)[1], nz(ta.stdev(lr, 20, false), 0.01))
+lr   = close[1] > 0 and close > 0 ? math.log(close / close[1]) : 0.0
+// Clamp inputs: continuous futures contain roll artefacts and bad ticks. One bar
+// with a 1000% "range" would drive mu positive and produce 2-3x multipliers and
+// negative low bands, wrecking the chart's price scale.
+rrS  = math.min(math.max(rr, 0.0), 0.5)
+rr5  = nz(ta.sma(rrS, 5)[1],  rrS)
+rr20 = nz(ta.sma(rrS, 20)[1], rrS)
+rr60 = nz(ta.sma(rrS, 60)[1], rrS)
+rvRaw = nz(ta.stdev(lr, 20, false)[1], nz(ta.stdev(lr, 20, false), 0.01))
+rv20 = math.min(math.max(rvRaw, 0.0001), 0.5)
 
 x1 = math.log(rr5 + 0.0001)
 x2 = math.log(rr20 + 0.0001)
@@ -81,6 +86,11 @@ x4 = math.log(rv20 + 0.0001)
 
 muU = c0u + c1u * x1 + c2u * x2 + c3u * x3 + c4u * x4
 muD = c0d + c1d * x1 + c2d * x2 + c3d * x3 + c4d * x4
+
+// Hard cap on any excursion. Real daily ranges top out near 14%, so 50% can only
+// ever fire on corrupt data - it keeps bands positive and the price scale sane.
+capExc(x) =>
+    math.min(math.max(math.exp(math.min(x, 0.69)), 0.0), 0.5)
 
 // ---------------- residual store ----------------
 var resU = array.new_float()
@@ -117,19 +127,19 @@ if validBands and (bar_index - lastQ >= refitN)
 
 // ---------------- bands ----------------
 op = open
-hiP10 = op * (1.0 + math.exp(muU + qU10))
-hiP50 = op * (1.0 + math.exp(muU + qU50))
-hiP90 = op * (1.0 + math.exp(muU + qU90))
-loP10 = op * (1.0 - math.exp(muD + qD90))
-loP50 = op * (1.0 - math.exp(muD + qD50))
-loP90 = op * (1.0 - math.exp(muD + qD10))
+hiP10 = op * (1.0 + capExc(muU + qU10))
+hiP50 = op * (1.0 + capExc(muU + qU50))
+hiP90 = op * (1.0 + capExc(muU + qU90))
+loP10 = op * (1.0 - capExc(muD + qD90))
+loP50 = op * (1.0 - capExc(muD + qD50))
+loP90 = op * (1.0 - capExc(muD + qD10))
 
 // ---------------- residual accumulation ----------------
 // MUST run on every bar. This is what keeps the bands alive: without it the
 // residual arrays stay empty, validBands never becomes true, and every plot
 // evaluates to na (the indicator loads but draws nothing).
-uRaw = math.max((high - open) / open, 0.0001)
-dRaw = math.max((open - low) / open, 0.0001)
+uRaw = math.min(math.max((high - open) / open, 0.0001), 0.5)
+dRaw = math.min(math.max((open - low) / open, 0.0001), 0.5)
 array.push(resU, math.log(uRaw) - muU)
 array.push(resD, math.log(dRaw) - muD)
 if array.size(resU) > residWin
@@ -210,12 +220,12 @@ if barstate.islast and showNext and showBands and validBands
     muDn = c0d + c1d * n1 + c2d * n2 + c3d * n3 + c4d * n4
 
     anchor = close
-    nh10 = anchor * (1.0 + math.exp(muUn + qU10))
-    nh50 = anchor * (1.0 + math.exp(muUn + qU50))
-    nh90 = anchor * (1.0 + math.exp(muUn + qU90))
-    nl10 = anchor * (1.0 - math.exp(muDn + qD90))
-    nl50 = anchor * (1.0 - math.exp(muDn + qD50))
-    nl90 = anchor * (1.0 - math.exp(muDn + qD10))
+    nh10 = anchor * (1.0 + capExc(muUn + qU10))
+    nh50 = anchor * (1.0 + capExc(muUn + qU50))
+    nh90 = anchor * (1.0 + capExc(muUn + qU90))
+    nl10 = anchor * (1.0 - capExc(muDn + qD90))
+    nl50 = anchor * (1.0 - capExc(muDn + qD50))
+    nl90 = anchor * (1.0 - capExc(muDn + qD10))
     xL = bar_index + 1
     xR = bar_index + 1 + nextBars
     if not na(projEnv)
