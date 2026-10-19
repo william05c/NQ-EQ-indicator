@@ -90,7 +90,7 @@ muD = c0d + c1d * x1 + c2d * x2 + c3d * x3 + c4d * x4
 // Hard cap on any excursion. Real daily ranges top out near 14%, so 50% can only
 // ever fire on corrupt data - it keeps bands positive and the price scale sane.
 capExc(x) =>
-    math.min(math.max(math.exp(math.min(x, 0.69)), 0.0), 0.5)
+    math.min(math.max(math.exp(math.min(x, 0.69)), 0.0), 0.25)
 
 // ---------------- residual store ----------------
 var resU = array.new_float()
@@ -140,8 +140,8 @@ loP90 = op * (1.0 - capExc(muD + qD10))
 // evaluates to na (the indicator loads but draws nothing).
 uRaw = math.min(math.max((high - open) / open, 0.0001), 0.5)
 dRaw = math.min(math.max((open - low) / open, 0.0001), 0.5)
-array.push(resU, math.log(uRaw) - muU)
-array.push(resD, math.log(dRaw) - muD)
+array.push(resU, math.min(math.max(math.log(uRaw) - muU, -1.5), 1.5))
+array.push(resD, math.min(math.max(math.log(dRaw) - muD, -1.5), 1.5))
 if array.size(resU) > residWin
     array.shift(resU)
 if array.size(resD) > residWin
