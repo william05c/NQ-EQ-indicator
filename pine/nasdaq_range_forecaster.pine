@@ -39,6 +39,7 @@ hiCol     = input.color(color.new(color.teal, 20), "Upside colour", group = "Dis
 loCol     = input.color(color.new(color.maroon, 20), "Downside colour", group = "Display")
 showNext  = input.bool(true, "Project next session to the right", group = "Projection")
 nextBars  = input.int(2, "Projection width (bars)", minval = 1, maxval = 10, group = "Projection")
+showPrev  = input.bool(false, "Previous period high / low", group = "Levels")
 
 // ---------------- profile ----------------
 autoProf = str.contains(syminfo.ticker, "NQ") ? "NQ" : str.contains(syminfo.ticker, "ES") ? "ES" : "IXIC"
@@ -174,6 +175,12 @@ fill(pLo10, pLo90, color = color.new(loCol, 88), title = "Downside 80% band")
 
 plot(showBands and showMeds and validBands ? hiP50 : na, "High median", color = hiCol, linewidth = 2, style = plot.style_line)
 plot(showBands and showMeds and validBands ? loP50 : na, "Low median",  color = loCol, linewidth = 2, style = plot.style_line)
+
+// ---------------- reference levels ----------------
+// Prior period high/low: the levels swing traders actually watch, and on a monthly
+// chart that is the previous month. Stepped, not lines, so they read as levels.
+plot(showPrev ? high[1] : na, "Previous high", color = color.new(color.gray, 35), linewidth = 1, style = plot.style_stepline)
+plot(showPrev ? low[1]  : na, "Previous low",  color = color.new(color.gray, 35), linewidth = 1, style = plot.style_stepline)
 
 // ---------------- live calibration stats ----------------
 var int   nStat  = 0
