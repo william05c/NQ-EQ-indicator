@@ -90,7 +90,7 @@ pct(arr, p) =>
     if n > 0
         s = array.copy(arr)
         array.sort(s, order.ascending)
-        int idx = math.max(0, math.min(n - 1, int(math.round(p * (n - 1)))))
+        int idx = int(math.max(0, math.min(n - 1, math.round(p * (n - 1)))))
         r := array.get(s, idx)
     r
 
@@ -168,9 +168,9 @@ if showTable and barstate.islast
     table.cell(t, 0, 1, "Sessions scored", text_color = color.black)
     table.cell(t, 1, 1, str.tostring(nStat), text_color = color.black)
     table.cell(t, 0, 2, "High inside 80%", text_color = color.black)
-    table.cell(t, 1, 2, nStat > 0 ? str.tostring(hitH / nStat * 100, "#.0") + "%" : "n/a", text_color = color.black)
+    table.cell(t, 1, 2, nStat > 0 ? str.tostring(hitH * 100.0 / nStat, "#.0") + "%" : "n/a", text_color = color.black)
     table.cell(t, 0, 3, "Low inside 80%", text_color = color.black)
-    table.cell(t, 1, 3, nStat > 0 ? str.tostring(hitL / nStat * 100, "#.0") + "%" : "n/a", text_color = color.black)
+    table.cell(t, 1, 3, nStat > 0 ? str.tostring(hitL * 100.0 / nStat, "#.0") + "%" : "n/a", text_color = color.black)
     table.cell(t, 0, 4, "Median error high", text_color = color.black)
     table.cell(t, 1, 4, nStat > 0 ? str.tostring(errH / nStat * 100, "#.##") + "%" : "n/a", text_color = color.black)
     table.cell(t, 0, 5, "Median error low", text_color = color.black)
@@ -179,4 +179,5 @@ if showTable and barstate.islast
 // ---------------- alerts ----------------
 alertcondition(validBands and high > hiP90, "High above p90 band", "Range expansion: high exceeded the p90 forecast band")
 alertcondition(validBands and low < loP10, "Low below p10 band", "Range expansion: low broke the p10 forecast band")
+
 
