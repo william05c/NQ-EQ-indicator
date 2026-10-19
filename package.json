@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "nasdaq-range-forecaster",
   "version": "1.0.0",
   "description": "Calibrated daily high/low prediction bands for NQ, ES and the Nasdaq Composite, with walk-forward validation and a TradingView indicator",

@@ -68,7 +68,7 @@ sD90 = prof == "NQ" ?  1.427955 : prof == "ES" ?  1.412328 :  1.451093
 
 // ---------------- features (all from data before this bar) ----------------
 rr   = (high - low) / close
-lr   = close[1] > 0 and close > 0 ? math.log(close / close[1]) : 0.0
+lr   = nz(close[1], 0.0) > 0 and close > 0 ? math.log(close / close[1]) : 0.0
 // Clamp inputs: continuous futures contain roll artefacts and bad ticks. One bar
 // with a 1000% "range" would drive mu positive and produce 2-3x multipliers and
 // negative low bands, wrecking the chart's price scale.
@@ -87,10 +87,27 @@ x4 = math.log(rv20 + 0.0001)
 muU = c0u + c1u * x1 + c2u * x2 + c3u * x3 + c4u * x4
 muD = c0d + c1d * x1 + c2d * x2 + c3d * x3 + c4d * x4
 
-// Hard cap on any excursion. Real daily ranges top out near 14%, so 50% can only
+// Hard cap on any excursion. Real daily ranges top out near 14%, so 25% can only
 // ever fire on corrupt data - it keeps bands positive and the price scale sane.
 capExc(x) =>
     math.min(math.max(math.exp(math.min(x, 0.69)), 0.0), 0.25)
+
+// ---------------- features for the NEXT session ----------------
+// These must be evaluated on EVERY bar. Calling ta.* inside the `if barstate.islast`
+// block below would break the moving averages (Pine only updates their internal
+// state on bars where the branch executes), so they live at global scope.
+// They include the current bar - correct for forecasting t+1, unlike muU/muD above
+// which are shifted one bar back to avoid lookahead when scoring bar t.
+rr5n  = nz(ta.sma(rrS, 5),  rrS)
+rr20n = nz(ta.sma(rrS, 20), rrS)
+rr60n = nz(ta.sma(rrS, 60), rrS)
+rv20n = math.min(math.max(nz(ta.stdev(lr, 20, false), 0.01), 0.0001), 0.5)
+n1 = math.log(rr5n + 0.0001)
+n2 = math.log(rr20n + 0.0001)
+n3 = math.log(rr60n + 0.0001)
+n4 = math.log(rv20n + 0.0001)
+muUn = c0u + c1u * n1 + c2u * n2 + c3u * n3 + c4u * n4
+muDn = c0d + c1d * n1 + c2d * n2 + c3d * n3 + c4d * n4
 
 // ---------------- residual store ----------------
 var resU = array.new_float()
@@ -140,8 +157,8 @@ loP90 = op * (1.0 - capExc(muD + qD10))
 // evaluates to na (the indicator loads but draws nothing).
 uRaw = math.min(math.max((high - open) / open, 0.0001), 0.5)
 dRaw = math.min(math.max((open - low) / open, 0.0001), 0.5)
-array.push(resU, math.min(math.max(math.log(uRaw) - muU, -1.5), 1.5))
-array.push(resD, math.min(math.max(math.log(dRaw) - muD, -1.5), 1.5))
+array.push(resU, math.log(uRaw) - muU)
+array.push(resD, math.log(dRaw) - muD)
 if array.size(resU) > residWin
     array.shift(resU)
 if array.size(resD) > residWin
@@ -205,20 +222,6 @@ var line projHiMed = na
 var line projLoMed = na
 
 if barstate.islast and showNext and showBands and validBands
-    // Features for the NEXT session must include the bar that just closed.
-    // The in-sample muU/muD above are shifted by one bar on purpose (no lookahead
-    // when scoring that bar), so they cannot be reused here.
-    rr5n  = nz(ta.sma(rrS, 5),  rrS)
-    rr20n = nz(ta.sma(rrS, 20), rrS)
-    rr60n = nz(ta.sma(rrS, 60), rrS)
-    rv20n = math.min(math.max(nz(ta.stdev(lr, 20, false), 0.01), 0.0001), 0.5)
-    n1 = math.log(rr5n + 0.0001)
-    n2 = math.log(rr20n + 0.0001)
-    n3 = math.log(rr60n + 0.0001)
-    n4 = math.log(rv20n + 0.0001)
-    muUn = c0u + c1u * n1 + c2u * n2 + c3u * n3 + c4u * n4
-    muDn = c0d + c1d * n1 + c2d * n2 + c3d * n3 + c4d * n4
-
     anchor = close
     nh10 = anchor * (1.0 + capExc(muUn + qU10))
     nh50 = anchor * (1.0 + capExc(muUn + qU50))
