@@ -150,7 +150,7 @@ plot(showIt ? loNow50 : na, "Low 50",  color = loCol, linewidth = 2)
 plot(showIt ? loNow10 : na, "Low 10",  color = loCol, linewidth = 1)
 
 // ---------------- table ----------------
-var table t = table.new(position.top_right, 2, 6, border_width = 1)
+var table t = table.new(position.top_right, 2, 9, border_width = 1)
 if showTable and barstate.islast
     table.cell(t, 0, 0, "Nowcast", bgcolor = color.new(color.gray, 85), text_color = color.black)
     table.cell(t, 1, 0, prof, bgcolor = color.new(color.gray, 85), text_color = color.black)
@@ -164,6 +164,23 @@ if showTable and barstate.islast
     table.cell(t, 1, 4, str.tostring(sigmaRem * z90, format.mintick) + " pts", text_color = color.black)
     table.cell(t, 0, 5, "Session range", text_color = color.black)
     table.cell(t, 1, 5, str.tostring(hiRef - loRef, format.mintick) + " pts", text_color = color.black)
+    // --- diagnostics: these rows tell us WHY it looks the way it does ---
+    table.cell(t, 0, 6, "Chart timeframe", text_color = color.gray)
+    table.cell(t, 1, 6, timeframe.period + (timeframe.isintraday ? " (ok)" : " (WRONG - use 5m)"), text_color = timeframe.isintraday ? color.gray : color.red)
+    table.cell(t, 0, 7, "Daily open (na?)", text_color = color.gray)
+    table.cell(t, 1, 7, str.tostring(oD, format.mintick), text_color = na(oD) ? color.red : color.gray)
+    table.cell(t, 0, 8, "Sigma pts", text_color = color.gray)
+    table.cell(t, 1, 8, str.tostring(sigmaDay, format.mintick), text_color = color.gray)
+
+// ---------------- timeframe guard ----------------
+// The nowcast only means anything on an intraday chart. Say so loudly instead of
+// drawing levels that quietly make no sense.
+var label warnLbl = na
+if barstate.islast
+    if not na(warnLbl)
+        label.delete(warnLbl)
+    if not timeframe.isintraday
+        warnLbl := label.new(bar_index, high, "Nowcast needs an intraday chart (use 5m)", style = label.style_label_down, color = color.new(color.red, 10), textcolor = color.white, size = size.normal)
 
 // ---------------- alerts ----------------
 alertcondition(pHiSet > 0.9, "High set", "More than 90% chance today's high is already in")
