@@ -96,18 +96,15 @@ Provenance, session definitions and the three corrected sessions are documented 
   measures how close to the ceiling this sits — within 11% of an oracle handed the day's
   exact range in advance.
 
-## Publishing to GitHub
+## Rebuilding
+
+Everything is reproducible from scratch — no keys, no paid data:
 
 ```bash
-git init
-git add .
-git commit -m "Nasdaq range forecaster: data pipeline, model, backtests, Pine indicator"
-git branch -M main
-git remote add origin https://github.com/<your-user>/nasdaq-range-forecaster.git
-git push -u origin main
+node src/build_all_datasets.js   # re-pull the three datasets
+node src/range_forecast.js       # refit, revalidate, print next-session bands
+node src/fit_coefficients.js     # regenerate the Pine constants if you change the model
 ```
-
-Create the empty repository first at github.com/new, then run the block above.
 
 ## License
 
