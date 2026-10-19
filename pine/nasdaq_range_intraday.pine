@@ -64,9 +64,9 @@ dailyFeat() =>
     r20  = nz(ta.sma(rrSD, 20)[1], rrSD)
     r60  = nz(ta.sma(rrSD, 60)[1], rrSD)
     rv   = math.min(math.max(nz(ta.stdev(lrD, 20, false)[1], 0.01), 0.0001), 0.5)
-    [open, r5, r20, r60, rv]
+    [open, r5, r20, r60, rv, high, low]
 
-[oD, r5D, r20D, r60D, rvD] = request.security(syminfo.tickerid, "D", dailyFeat(), lookahead = barmerge.lookahead_off)
+[oD, r5D, r20D, r60D, rvD, dHi, dLo] = request.security(syminfo.tickerid, "D", dailyFeat(), lookahead = barmerge.lookahead_off)
 
 // ---------------- model ----------------
 capExc(x) =>
@@ -96,7 +96,7 @@ plot(showMeds ? hiP50 : na, "High median", color = hiCol, linewidth = 2, style =
 plot(showMeds ? loP50 : na, "Low median",  color = loCol, linewidth = 2, style = plot.style_stepline)
 
 // ---------------- table ----------------
-var table t = table.new(position.top_right, 2, 7, border_width = 1)
+var table t = table.new(position.top_right, 2, 9, border_width = 1)
 if showLevels and barstate.islast
     rangePts = hiP50 - loP50
     table.cell(t, 0, 0, "Today's range", bgcolor = color.new(color.gray, 85), text_color = color.black)
@@ -113,6 +113,11 @@ if showLevels and barstate.islast
     table.cell(t, 1, 5, str.tostring(loP10, format.mintick) + " - " + str.tostring(loP90, format.mintick), text_color = color.black)
     table.cell(t, 0, 6, "Expected range", text_color = color.black)
     table.cell(t, 1, 6, str.tostring(rangePts, format.mintick) + " pts (" + str.tostring(rangePts / oD * 100, "#.##") + "%)", text_color = color.black)
+    table.cell(t, 0, 7, "Range so far", text_color = color.black)
+    table.cell(t, 1, 7, str.tostring(dHi - dLo, format.mintick) + " pts", text_color = color.black)
+    used = rangePts > 0 ? (dHi - dLo) / rangePts * 100 : 0.0
+    table.cell(t, 0, 8, "Used of expected", text_color = color.black)
+    table.cell(t, 1, 8, str.tostring(used, "#.0") + "%", text_color = color.black)
 
 // ---------------- alerts ----------------
 alertcondition(ta.crossover(close, hiP90), "High band broken", "Price traded above the daily high p90 level")
