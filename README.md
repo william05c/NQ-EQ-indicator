@@ -39,6 +39,11 @@ node src/pine_rehearsal.js       # verify the TradingView port against the resea
 ## TradingView
 
 Paste [`pine/nasdaq_range_forecaster.pine`](pine/nasdaq_range_forecaster.pine) into the Pine
+For **day trading**, use [`pine/nasdaq_range_intraday.pine`](pine/nasdaq_range_intraday.pine)
+on your 5-minute chart instead: it computes the model on daily bars via
+`request.security` and holds today's levels constant through the session. Never run the
+daily script on an intraday chart — its features would be computed on the wrong bars.
+
 Editor on a **daily** chart of `NQ1!` or `ES1!`. Full guide in
 [`docs/06-tradingview.md`](docs/06-tradingview.md).
 

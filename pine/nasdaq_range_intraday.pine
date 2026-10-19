@@ -1,0 +1,119 @@
+//@version=5
+// ============================================================================
+//  Daily Range Levels - intraday overlay for NQ / ES / Index
+// ----------------------------------------------------------------------------
+//  Companion to "nasdaq_range_forecaster.pine". Put THIS on your 5-minute (or
+//  any intraday) chart: it computes the model on DAILY bars via request.security
+//  and draws today's expected high/low bands as horizontal levels.
+//
+//  Why a separate script: the model forecasts one session's extremes from that
+//  session's OPEN. On a 5-minute chart the "5-minute features" are meaningless
+//  with daily-fitted coefficients. This script pulls the daily inputs and then
+//  holds them constant for the whole session.
+//
+//  The levels do NOT repaint during the session:
+//    - the daily open is fixed at the session start
+//    - every feature uses the prior day ([1]), so it cannot change intraday
+//
+//  Bands use the fixed seed quantiles (an intraday chart cannot carry the
+//  rolling residual buffer across timeframes). Measured coverage with frozen
+//  quantiles: 80.0% / 80.0% (IXIC), 80.0% / 79.9% (NQ), 80.0% / 79.8% (ES).
+// ============================================================================
+
+indicator("Daily Range Levels (intraday overlay)", "RangeLevels", overlay = true)
+
+// ---------------- inputs ----------------
+profileIn = input.string("Auto (by symbol)", "Asset profile", options = ["Auto (by symbol)", "NQ futures (24h)", "ES futures (24h)", "Cash index (RTH)"], group = "Model")
+showBands = input.bool(true, "Show 80% bands", group = "Display")
+showMeds  = input.bool(true, "Show medians", group = "Display")
+showLevels = input.bool(true, "Show level table", group = "Display")
+hiCol     = input.color(color.new(color.teal, 10), "Upside colour", group = "Display")
+loCol     = input.color(color.new(color.maroon, 10), "Downside colour", group = "Display")
+
+// ---------------- profile ----------------
+autoProf = str.contains(syminfo.ticker, "NQ") ? "NQ" : str.contains(syminfo.ticker, "ES") ? "ES" : "IXIC"
+prof = profileIn == "NQ futures (24h)" ? "NQ" : profileIn == "ES futures (24h)" ? "ES" : profileIn == "Cash index (RTH)" ? "IXIC" : autoProf
+
+c0u = prof == "NQ" ? -1.694495 : prof == "ES" ? -1.460724 : -1.560655
+c1u = prof == "NQ" ?  0.755239 : prof == "ES" ?  0.681027 :  0.757907
+c2u = prof == "NQ" ? -0.125094 : prof == "ES" ?  0.497639 :  0.147927
+c3u = prof == "NQ" ?  0.262881 : prof == "ES" ?  0.180519 :  0.073320
+c4u = prof == "NQ" ? -0.034915 : prof == "ES" ? -0.399594 : -0.053215
+
+c0d = prof == "NQ" ? -1.692194 : prof == "ES" ? -1.449274 : -1.561902
+c1d = prof == "NQ" ?  0.571979 : prof == "ES" ?  0.532104 :  0.495297
+c2d = prof == "NQ" ?  0.075713 : prof == "ES" ?  0.621457 :  0.145741
+c3d = prof == "NQ" ?  0.067209 : prof == "ES" ?  0.162186 :  0.180904
+c4d = prof == "NQ" ?  0.153190 : prof == "ES" ? -0.335095 :  0.101781
+
+sU10 = prof == "NQ" ? -1.393331 : prof == "ES" ? -1.478340 : -1.737729
+sU50 = prof == "NQ" ?  0.244323 : prof == "ES" ?  0.200374 :  0.297207
+sU90 = prof == "NQ" ?  1.137000 : prof == "ES" ?  1.202514 :  1.274199
+sD10 = prof == "NQ" ? -1.743627 : prof == "ES" ? -1.798963 : -2.018891
+sD50 = prof == "NQ" ?  0.274472 : prof == "ES" ?  0.234755 :  0.299511
+sD90 = prof == "NQ" ?  1.427955 : prof == "ES" ?  1.412328 :  1.451093
+
+// ---------------- daily inputs, fetched once per day ----------------
+// Everything here is evaluated on the DAILY timeframe, then held constant
+// intraday. All features are shifted by [1] so they cannot change mid-session.
+dailyFeat() =>
+    rrD  = (high - low) / close
+    rrSD = math.min(math.max(rrD, 0.0), 0.5)
+    lrD  = nz(close[1], 0.0) > 0 and close > 0 ? math.log(close / close[1]) : 0.0
+    r5   = nz(ta.sma(rrSD, 5)[1],  rrSD)
+    r20  = nz(ta.sma(rrSD, 20)[1], rrSD)
+    r60  = nz(ta.sma(rrSD, 60)[1], rrSD)
+    rv   = math.min(math.max(nz(ta.stdev(lrD, 20, false)[1], 0.01), 0.0001), 0.5)
+    [open, r5, r20, r60, rv]
+
+[oD, r5D, r20D, r60D, rvD] = request.security(syminfo.tickerid, "D", dailyFeat(), lookahead = barmerge.lookahead_off)
+
+// ---------------- model ----------------
+capExc(x) =>
+    math.min(math.max(math.exp(math.min(x, 0.69)), 0.0), 0.25)
+
+x1 = math.log(r5D + 0.0001)
+x2 = math.log(r20D + 0.0001)
+x3 = math.log(r60D + 0.0001)
+x4 = math.log(rvD + 0.0001)
+
+muU = c0u + c1u * x1 + c2u * x2 + c3u * x3 + c4u * x4
+muD = c0d + c1d * x1 + c2d * x2 + c3d * x3 + c4d * x4
+
+hiP10 = oD * (1.0 + capExc(muU + sU10))
+hiP50 = oD * (1.0 + capExc(muU + sU50))
+hiP90 = oD * (1.0 + capExc(muU + sU90))
+loP10 = oD * (1.0 - capExc(muD + sD90))
+loP50 = oD * (1.0 - capExc(muD + sD50))
+loP90 = oD * (1.0 - capExc(muD + sD10))
+
+// ---------------- levels ----------------
+plot(showBands ? hiP90 : na, "High p90", color = hiCol, linewidth = 1, style = plot.style_stepline)
+plot(showBands ? hiP10 : na, "High p10", color = color.new(hiCol, 55), linewidth = 1, style = plot.style_stepline)
+plot(showBands ? loP90 : na, "Low p90",  color = color.new(loCol, 55), linewidth = 1, style = plot.style_stepline)
+plot(showBands ? loP10 : na, "Low p10",  color = loCol, linewidth = 1, style = plot.style_stepline)
+plot(showMeds ? hiP50 : na, "High median", color = hiCol, linewidth = 2, style = plot.style_stepline)
+plot(showMeds ? loP50 : na, "Low median",  color = loCol, linewidth = 2, style = plot.style_stepline)
+
+// ---------------- table ----------------
+var table t = table.new(position.top_right, 2, 7, border_width = 1)
+if showLevels and barstate.islast
+    rangePts = hiP50 - loP50
+    table.cell(t, 0, 0, "Today's range", bgcolor = color.new(color.gray, 85), text_color = color.black)
+    table.cell(t, 1, 0, prof, bgcolor = color.new(color.gray, 85), text_color = color.black)
+    table.cell(t, 0, 1, "Opening price", text_color = color.black)
+    table.cell(t, 1, 1, str.tostring(oD, format.mintick), text_color = color.black)
+    table.cell(t, 0, 2, "High 80%", text_color = color.black)
+    table.cell(t, 1, 2, str.tostring(hiP10, format.mintick) + " - " + str.tostring(hiP90, format.mintick), text_color = color.black)
+    table.cell(t, 0, 3, "High median", text_color = color.black)
+    table.cell(t, 1, 3, str.tostring(hiP50, format.mintick), text_color = hiCol)
+    table.cell(t, 0, 4, "Low median", text_color = color.black)
+    table.cell(t, 1, 4, str.tostring(loP50, format.mintick), text_color = loCol)
+    table.cell(t, 0, 5, "Low 80%", text_color = color.black)
+    table.cell(t, 1, 5, str.tostring(loP10, format.mintick) + " - " + str.tostring(loP90, format.mintick), text_color = color.black)
+    table.cell(t, 0, 6, "Expected range", text_color = color.black)
+    table.cell(t, 1, 6, str.tostring(rangePts, format.mintick) + " pts (" + str.tostring(rangePts / oD * 100, "#.##") + "%)", text_color = color.black)
+
+// ---------------- alerts ----------------
+alertcondition(ta.crossover(close, hiP90), "High band broken", "Price traded above the daily high p90 level")
+alertcondition(ta.crossunder(close, loP10), "Low band broken", "Price traded below the daily low p10 level")
