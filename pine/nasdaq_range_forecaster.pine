@@ -188,28 +188,46 @@ alertcondition(validBands and low < loP10, "Low below p10 band", "Range expansio
 // until tomorrow opens. What follows is a visual guide only, anchored at the
 // last close, showing where the NEXT session's range is likely to sit.
 // It ignores the overnight gap, so treat it as indicative, not exact.
+var box  projEnv   = na
 var box  projHiBox = na
 var box  projLoBox = na
 var line projHiMed = na
 var line projLoMed = na
 
 if barstate.islast and showNext and showBands and validBands
+    // Features for the NEXT session must include the bar that just closed.
+    // The in-sample muU/muD above are shifted by one bar on purpose (no lookahead
+    // when scoring that bar), so they cannot be reused here.
+    rr5n  = nz(ta.sma(rr, 5),  rr)
+    rr20n = nz(ta.sma(rr, 20), rr)
+    rr60n = nz(ta.sma(rr, 60), rr)
+    rv20n = nz(ta.stdev(lr, 20, false), 0.01)
+    n1 = math.log(rr5n + 0.0001)
+    n2 = math.log(rr20n + 0.0001)
+    n3 = math.log(rr60n + 0.0001)
+    n4 = math.log(rv20n + 0.0001)
+    muUn = c0u + c1u * n1 + c2u * n2 + c3u * n3 + c4u * n4
+    muDn = c0d + c1d * n1 + c2d * n2 + c3d * n3 + c4d * n4
+
     anchor = close
-    nh10 = anchor * (1.0 + math.exp(muU + qU10))
-    nh50 = anchor * (1.0 + math.exp(muU + qU50))
-    nh90 = anchor * (1.0 + math.exp(muU + qU90))
-    nl10 = anchor * (1.0 - math.exp(muD + qD90))
-    nl50 = anchor * (1.0 - math.exp(muD + qD50))
-    nl90 = anchor * (1.0 - math.exp(muD + qD10))
+    nh10 = anchor * (1.0 + math.exp(muUn + qU10))
+    nh50 = anchor * (1.0 + math.exp(muUn + qU50))
+    nh90 = anchor * (1.0 + math.exp(muUn + qU90))
+    nl10 = anchor * (1.0 - math.exp(muDn + qD90))
+    nl50 = anchor * (1.0 - math.exp(muDn + qD50))
+    nl90 = anchor * (1.0 - math.exp(muDn + qD10))
     xL = bar_index + 1
     xR = bar_index + 1 + nextBars
-    if not na(projHiBox)
+    if not na(projEnv)
+        box.delete(projEnv)
         box.delete(projHiBox)
         box.delete(projLoBox)
         line.delete(projHiMed)
         line.delete(projLoMed)
-    projHiBox := box.new(xL, nh90, xR, nh10, bgcolor = color.new(hiCol, 88), border_color = color.new(hiCol, 50))
-    projLoBox := box.new(xL, nl90, xR, nl10, bgcolor = color.new(loCol, 88), border_color = color.new(loCol, 50))
+    // full envelope first, then the two sub-bands on top
+    projEnv := box.new(xL, nh90, xR, nl10, bgcolor = color.new(color.gray, 93), border_color = color.new(color.gray, 75))
+    projHiBox := box.new(xL, nh90, xR, nh10, bgcolor = color.new(hiCol, 82), border_color = color.new(hiCol, 45))
+    projLoBox := box.new(xL, nl90, xR, nl10, bgcolor = color.new(loCol, 82), border_color = color.new(loCol, 45))
     projHiMed := line.new(xL, nh50, xR, nh50, color = hiCol, width = 2, style = line.style_dashed)
     projLoMed := line.new(xL, nl50, xR, nl50, color = loCol, width = 2, style = line.style_dashed)
 
