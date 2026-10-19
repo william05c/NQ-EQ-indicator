@@ -91,12 +91,20 @@ sigmaRaw = (dayHi50 - dayLo50) / 1.596            // Feller: E[range] = 1.596 * 
 // sanity: a daily sigma above 8% of price is corrupt data, not a forecast
 sigmaDay = sigmaRaw > 0 and sigmaRaw < oD * 0.08 ? sigmaRaw : na
 
-// ---------------- elapsed fraction of the US cash session ----------------
-sessZone = "America/New_York"
-startMin = 9 * 60 + 30
-endMin   = 16 * 60
-minsNow  = hour(time, sessZone) * 60 + minute(time, sessZone)
-elapsed  = math.min(math.max((minsNow - startMin) / (endMin - startMin), 0.0), 1.0)
+// ---------------- elapsed fraction of the trading day ----------------
+// Futures trade a 23h day (18:00 -> 17:00 ET); cash indices 6.5h. Using the cash
+// window on a 24h futures chart pins elapsed at 0 overnight, which makes the band
+// look frozen - so the window follows the instrument.
+sessZone  = "America/New_York"
+isFutures = prof == "NQ" or prof == "ES"
+startMin  = isFutures ? 18 * 60 : 9 * 60 + 30
+spanMin   = isFutures ? 23 * 60 : 390
+minsNow   = hour(time, sessZone) * 60 + minute(time, sessZone)
+intoDay   = (minsNow - startMin + 1440) % 1440
+futElapsed  = math.min(math.max(intoDay / spanMin, 0.0), 1.0)
+// cash: no wrap-around - before 09:30 counts as 0, not "end of yesterday"
+cashElapsed = minsNow >= 960 ? 1.0 : minsNow >= 570 ? (minsNow - 570) / 390 : 0.0
+elapsed     = isFutures ? futElapsed : cashElapsed
 
 // ---------------- nowcast ----------------
 normCdf(x) =>
