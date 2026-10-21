@@ -33,7 +33,7 @@ residWin  = input.int(500, "Daily: residual window", minval = 100, maxval = 2000
 minResid  = input.int(60, "Daily: min residuals before bands", minval = 20, maxval = 300, group = "Model")
 refitN    = input.int(21, "Daily: recompute quantiles every N bars", minval = 1, maxval = 120, group = "Model")
 calibWin  = input.int(50, "Daily: calibration window (sessions)", minval = 20, maxval = 500, group = "Model")
-rthVarShare = input.float(0.70, "Intraday: share of daily variance in the cash session", minval = 0.40, maxval = 0.90, step = 0.05, group = "Model")
+rthVarShare = input.float(0.66, "Intraday: share of daily variance in the cash session", minval = 0.40, maxval = 0.90, step = 0.01, group = "Model")
 showBands = input.bool(true, "Show bands", group = "Display")
 showTable = input.bool(true, "Show table", group = "Display")
 showLabel = input.bool(true, "Show status label (intraday)", group = "Display")
