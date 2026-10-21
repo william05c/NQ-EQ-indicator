@@ -24,7 +24,7 @@
 //  intraday probabilities within 2-3 points of realised frequency in Monte Carlo.
 // ============================================================================
 
-indicator("NQ / ES Range (daily + intraday)", "RangeForecast", overlay = true, max_bars_back = 3000)
+indicator("NQ / ES Range (daily + intraday)", "RangeFC", overlay = true, max_bars_back = 3000)
 
 // ---------------- inputs ----------------
 modeIn    = input.string("Auto (by chart timeframe)", "Mode", options = ["Auto (by chart timeframe)", "Daily band", "Intraday nowcast"], group = "Model")
@@ -334,11 +334,14 @@ if barstate.islast
     if not na(statLbl)
         label.delete(statLbl)
     if showLabel and useIntraday
-        lblTxt = "NOWCAST  " + str.tostring(elapsed * 100, "#.0") + "% of day, " + str.tostring(elapsedVar * 100, "#.0") + "% of move spent\n" +
-          "price " + str.tostring(pNow, format.mintick) + "\n" +
-          "high so far " + str.tostring(hiRef, format.mintick) + "   low so far " + str.tostring(loRef, format.mintick) + "\n" +
-          "NEW HIGH " + str.tostring(chNewHigh * 100, "#.0") + "%   NEW LOW " + str.tostring(chNewLow * 100, "#.0") + "%\n" +
-          verdict + "   room " + str.tostring(room, format.mintick) + " pts"
+        // Built as whole statements: a multi-line + continuation is what
+        // TradingView rejects with "end of line without line continuation".
+        ln1 = "NOWCAST  " + str.tostring(elapsed * 100, "#.0") + "% of day, " + str.tostring(elapsedVar * 100, "#.0") + "% of move spent"
+        ln2 = "price " + str.tostring(pNow, format.mintick)
+        ln3 = "high so far " + str.tostring(hiRef, format.mintick) + "   low so far " + str.tostring(loRef, format.mintick)
+        ln4 = "high extends " + str.tostring(chNewHigh * 100, "#.0") + "%   low extends " + str.tostring(chNewLow * 100, "#.0") + "%"
+        ln5 = verdict + "   room " + str.tostring(room, format.mintick) + " pts"
+        lblTxt = ln1 + "\n" + ln2 + "\n" + ln3 + "\n" + ln4 + "\n" + ln5
         statLbl := label.new(bar_index, iHi90, lblTxt, style = label.style_label_down, color = verdictCol, textcolor = color.white, size = size.small)
 
 // ---------------- alerts ----------------

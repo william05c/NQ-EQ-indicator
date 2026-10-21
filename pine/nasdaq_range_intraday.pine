@@ -20,7 +20,7 @@
 //  quantiles: 80.0% / 80.0% (IXIC), 80.0% / 79.9% (NQ), 80.0% / 79.8% (ES).
 // ============================================================================
 
-indicator("Daily Range Levels (intraday overlay)", "RangeLevels", overlay = true)
+indicator("Daily Range Levels (intraday overlay)", "RangeLvls", overlay = true)
 
 // ---------------- inputs ----------------
 profileIn = input.string("Auto (by symbol)", "Asset profile", options = ["Auto (by symbol)", "NQ futures (24h)", "ES futures (24h)", "Cash index (RTH)"], group = "Model")

@@ -173,3 +173,20 @@ if (leaks) {
   if (bad) { console.log(`\n${bad} file(s) with a wrong normal CDF`); process.exit(1); }
   console.log('normal CDF scaling: ok');
 }
+// ---------------- SHORTTITLE LENGTH ----------------
+// TradingView rejects indicator() shorttitles longer than 10 characters
+// ("SHORT TITLE TOO LONG"), which blocks the whole script from compiling.
+{
+  let bad = 0;
+  for (const file of FILES) {
+    const src = fs.readFileSync(file, 'utf8');
+    const m = src.match(/^indicator\s*\(\s*"(?:[^"\\]|\\.)*"\s*,\s*"([^"]*)"/m);
+    if (!m) continue;
+    if (m[1].length > 10) {
+      console.log(`${path.basename(file)}: shorttitle "${m[1]}" is ${m[1].length} chars, max 10`);
+      bad++;
+    }
+  }
+  if (bad) { console.log(`\n${bad} shorttitle(s) too long`); process.exit(1); }
+  console.log('shorttitle length: ok');
+}

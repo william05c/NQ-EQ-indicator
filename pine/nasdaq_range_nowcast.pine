@@ -26,7 +26,7 @@
 //  strings; that state could go stale and paint levels from previous days.
 // ============================================================================
 
-indicator("Daily Range Nowcast (intraday)", "RangeNowcast", overlay = true)
+indicator("Daily Range Nowcast (intraday)", "RangeNow", overlay = true)
 
 // ---------------- inputs ----------------
 profileIn = input.string("Auto (by symbol)", "Asset profile", options = ["Auto (by symbol)", "NQ futures (24h)", "ES futures (24h)", "Cash index (RTH)"], group = "Model")
