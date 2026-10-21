@@ -309,7 +309,7 @@ if showTable and barstate.islast
         // These two overlap: a session can extend BOTH extremes, so they do not
         // sum to 100% and both may exceed 50%. That is not a bug.
         table.cell(t, 0, 8, "", text_color = color.gray)
-        table.cell(t, 1, 8, "overlapping - both can happen", text_color = color.gray)
+        table.cell(t, 1, 8, "not shares of 100% - both can happen", text_color = color.gray)
         table.cell(t, 0, 9, "Room left", text_color = color.black)
         table.cell(t, 1, 9, str.tostring(room, format.mintick) + " pts  1NQ " + riskNQ + " / 1MNQ " + riskMNQ, text_color = color.black)
         // audit row: the bands and the probabilities must come from THIS number.
