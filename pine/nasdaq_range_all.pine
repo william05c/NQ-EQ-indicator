@@ -355,6 +355,8 @@ if showTable and barstate.islast
         // room = sigmaRem * 1.645, so sigmaRem must equal room / 1.645.
         table.cell(t, 0, 10, "Sigma (audit)", text_color = color.gray)
         table.cell(t, 1, 10, str.tostring(sigmaRem, format.mintick) + " pts   check: room/1.645 = " + str.tostring(room / z90, format.mintick), text_color = color.gray)
+        table.cell(t, 0, 11, "Model vs implied vol", text_color = color.gray)
+        table.cell(t, 1, 11, volTxt, text_color = volCol)
     else
         table.cell(t, 0, 1, "Bands from bar", text_color = color.black)
         table.cell(t, 1, 1, dValid ? "ready" : "warming up", text_color = color.black)

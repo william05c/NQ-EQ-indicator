@@ -190,3 +190,33 @@ if (leaks) {
   if (bad) { console.log(`\n${bad} shorttitle(s) too long`); process.exit(1); }
   console.log('shorttitle length: ok');
 }
+// ---------------- DEAD VARIABLE ----------------
+// A variable that is assigned and never read anywhere else. This is how a table
+// row silently went missing: volTxt was computed, the cell that showed it was
+// never added, and nothing complained.
+{
+  let bad = 0;
+  for (const file of FILES) {
+    const src = fs.readFileSync(file, 'utf8');
+    const lines = src.split(/\r?\n/);
+    const names = new Map();
+    for (const raw of lines) {
+      const line = raw.replace(/\/\/.*$/, '');
+      const m = line.match(/^\s{0,3}(\w+)\s*=\s*/);
+      if (!m) continue;
+      if (/^\s*(var|varip|input)\b/.test(line)) continue;
+      // drawing calls are assigned for their side effect, not their value
+      if (/=\s*(plot|fill|hline|alertcondition|bgcolor|barcolor)\s*\(/.test(line)) continue;
+      names.set(m[1], (names.get(m[1]) || 0) + 1);
+    }
+    for (const [name, decls] of names) {
+      const uses = (src.match(new RegExp('\\b' + name + '\\b', 'g')) || []).length;
+      if (uses <= decls) {
+        console.log(`${path.basename(file)}: "${name}" is assigned but never used`);
+        bad++;
+      }
+    }
+  }
+  if (bad) { console.log(`\n${bad} dead variable(s)`); process.exit(1); }
+  console.log('dead variables: ok');
+}

@@ -52,12 +52,8 @@ c2d = prof == "NQ" ?  0.075713 : prof == "ES" ?  0.621457 :  0.145741
 c3d = prof == "NQ" ?  0.067209 : prof == "ES" ?  0.162186 :  0.180904
 c4d = prof == "NQ" ?  0.153190 : prof == "ES" ? -0.335095 :  0.101781
 
-sU10 = prof == "NQ" ? -1.393331 : prof == "ES" ? -1.478340 : -1.737729
 sU50 = prof == "NQ" ?  0.244323 : prof == "ES" ?  0.200374 :  0.297207
-sU90 = prof == "NQ" ?  1.137000 : prof == "ES" ?  1.202514 :  1.274199
-sD10 = prof == "NQ" ? -1.743627 : prof == "ES" ? -1.798963 : -2.018891
 sD50 = prof == "NQ" ?  0.274472 : prof == "ES" ?  0.234755 :  0.299511
-sD90 = prof == "NQ" ?  1.427955 : prof == "ES" ?  1.412328 :  1.451093
 
 // ---------------- daily inputs ----------------
 // Returns the model features plus TODAY'S running high/low, all taken from the
