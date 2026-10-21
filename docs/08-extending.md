@@ -127,3 +127,33 @@ change:
   same window.
 
 Until then, the ceiling stands, and the honest roadmap is intraday.
+
+## Data filtering: tested, does not work
+
+Repeated suggestion: "filter out the less accurate days so the model gets better". Two
+different operations hide behind that, and `src/data_filter_test.js` measures both.
+
+| Variant | What it does | MAE high | 80% coverage high | Verdict |
+|---|---|---|---|---|
+| baseline | nothing | 54.85 | 79.9% | reference |
+| glitch | drop bars whose range is >5x the 60-day median | 54.85 | 79.7% | no effect (data is already clean) |
+| winsor2 | clamp residuals to +/-2 | 54.85 | 79.9% | no effect (500 residuals, tail does not move the 10/90) |
+| trim3 | drop residuals beyond +/-3 | 54.88 | 76.2% | **fails the gate** |
+| trim2 | drop residuals beyond +/-2 | 54.89 | 72.0% | **fails badly** |
+
+Same pattern on NQ and ES.
+
+The reason is structural. MAE is driven by the **median** prediction, which comes from the
+regression, not from the residual pool. Trimming the pool cannot improve it — it moves the
+10th and 90th percentiles inward, narrowing the band by 8-16%, which cuts coverage from
+~80% to 72% while leaving accuracy untouched. A narrower band that misses more often is not
+an improvement; it is the same forecast wearing a more confident face.
+
+The one legitimate filter is **corrupt-bar removal**, and it is worth keeping in any ingest
+step even though it is inert here: the daily CSVs are clean, but the TradingView `NQ1!`
+continuous contract has been observed returning bars spanning 13,735 to 51,000 inside one
+day. That filter belongs in data loading, not as an accuracy lever.
+
+This is the third attempt in this repo at buying accuracy by discarding data — after clamping
+residuals at +/-1.5 (coverage 79.9% -> 76.9%) and the volatility-estimator swap (no change).
+The ceiling is the median model, not the residual pool.
