@@ -281,13 +281,13 @@ room      = sigmaRem * z90
 dayDone   = chNewHigh < 0.15 and chNewLow < 0.15
 nearHi    = pNow >= iHi90 - sigmaRem * 0.30 and chNewHigh < 0.55
 nearLo    = pNow <= iLo10 + sigmaRem * 0.30 and chNewLow < 0.55
-verdict   = dayDone ? "DAY DONE - stand aside" : nearHi ? "FADE HIGH - short the band" : nearLo ? "FADE LOW - long the band" : "NO TRADE - mid range"
+verdict   = dayDone ? "DAY DONE - stand aside" : nearHi ? "FADE HIGH - short the band" : nearLo ? "FADE LOW - long the band" : "NO TRADE - mid band, no edge"
 verdictCol = dayDone or (not nearHi and not nearLo) ? color.gray : nearHi ? loCol : hiCol
 riskNQ    = "$" + str.tostring(math.round(room * 20), "#,###")
 riskMNQ   = "$" + str.tostring(math.round(room * 2), "#,###")
 
 // ---------------- table ----------------
-var table t = table.new(position.top_right, 2, 10, border_width = 1)
+var table t = table.new(position.top_right, 2, 11, border_width = 1)
 if showTable and barstate.islast
     table.cell(t, 0, 0, useIntraday ? "Nowcast" : "Range", bgcolor = color.new(color.gray, 85), text_color = color.black)
     table.cell(t, 1, 0, prof + " / " + timeframe.period, bgcolor = color.new(color.gray, 85), text_color = color.black)
@@ -302,16 +302,20 @@ if showTable and barstate.islast
         table.cell(t, 1, 4, str.tostring(iHi10, format.mintick) + " to " + str.tostring(iHi90, format.mintick), text_color = hiCol)
         table.cell(t, 0, 5, "LOW will finish", text_color = color.black)
         table.cell(t, 1, 5, str.tostring(iLo10, format.mintick) + " to " + str.tostring(iLo90, format.mintick), text_color = loCol)
-        table.cell(t, 0, 6, "Chance NEW high", text_color = color.black)
+        table.cell(t, 0, 6, "Chance high extends", text_color = color.black)
         table.cell(t, 1, 6, str.tostring(chNewHigh * 100, "#.0") + "%", text_color = hiCol)
-        table.cell(t, 0, 7, "Chance NEW low", text_color = color.black)
+        table.cell(t, 0, 7, "Chance low extends", text_color = color.black)
         table.cell(t, 1, 7, str.tostring(chNewLow * 100, "#.0") + "%", text_color = loCol)
-        table.cell(t, 0, 8, "Room left", text_color = color.black)
-        table.cell(t, 1, 8, str.tostring(room, format.mintick) + " pts  1NQ " + riskNQ + " / 1MNQ " + riskMNQ, text_color = color.black)
+        // These two overlap: a session can extend BOTH extremes, so they do not
+        // sum to 100% and both may exceed 50%. That is not a bug.
+        table.cell(t, 0, 8, "", text_color = color.gray)
+        table.cell(t, 1, 8, "overlapping - both can happen", text_color = color.gray)
+        table.cell(t, 0, 9, "Room left", text_color = color.black)
+        table.cell(t, 1, 9, str.tostring(room, format.mintick) + " pts  1NQ " + riskNQ + " / 1MNQ " + riskMNQ, text_color = color.black)
         // audit row: the bands and the probabilities must come from THIS number.
         // room = sigmaRem * 1.645, so sigmaRem must equal room / 1.645.
-        table.cell(t, 0, 9, "Sigma (audit)", text_color = color.gray)
-        table.cell(t, 1, 9, str.tostring(sigmaRem, format.mintick) + " pts   check: room/1.645 = " + str.tostring(room / z90, format.mintick), text_color = color.gray)
+        table.cell(t, 0, 10, "Sigma (audit)", text_color = color.gray)
+        table.cell(t, 1, 10, str.tostring(sigmaRem, format.mintick) + " pts   check: room/1.645 = " + str.tostring(room / z90, format.mintick), text_color = color.gray)
     else
         table.cell(t, 0, 1, "Bands from bar", text_color = color.black)
         table.cell(t, 1, 1, dValid ? "ready" : "warming up", text_color = color.black)
