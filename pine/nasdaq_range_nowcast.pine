@@ -110,10 +110,13 @@ cashElapsed = minsNow >= 960 ? 1.0 : minsNow >= 570 ? (minsNow - 570) / 390 : 0.
 elapsed     = isFutures ? futElapsed : cashElapsed
 
 // ---------------- nowcast ----------------
+// Normal CDF. The Abramowitz-Stegun 7.1.26 polynomial approximates erf(x), and
+// Phi(x) = 0.5*(1+erf(x/sqrt(2))). Feeding x in directly instead of x/sqrt(2)
+// returns Phi(x*sqrt(2)) and silently understates every tail probability.
 normCdf(x) =>
-    // Abramowitz-Stegun 7.1.26
-    a = 1.0 / (1.0 + 0.3275911 * math.abs(x))
-    y = 1.0 - ((((1.061405429 * a - 1.453152027) * a + 1.421413741) * a - 0.284496736) * a + 0.254829592) * a * math.exp(-x * x)
+    z = math.abs(x) * 0.7071067811865476
+    a = 1.0 / (1.0 + 0.3275911 * z)
+    y = 1.0 - ((((1.061405429 * a - 1.453152027) * a + 1.421413741) * a - 0.284496736) * a + 0.254829592) * a * math.exp(-z * z)
     x >= 0 ? 0.5 * (1.0 + y) : 0.5 * (1.0 - y)
 
 z10 = 0.125661   // Phi^-1(0.55)

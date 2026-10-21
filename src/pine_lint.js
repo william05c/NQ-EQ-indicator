@@ -157,3 +157,19 @@ if (leaks) {
 } else {
   console.log('cross-file identifier check: ok');
 }
+// ---------------- NORMAL CDF SCALING ----------------
+// The A&S 7.1.26 polynomial computes erf(x); Phi needs erf(x/sqrt(2)). Missing the
+// /sqrt(2) silently understates every tail probability by a wide margin.
+{
+  let bad = 0;
+  for (const file of FILES) {
+    const src = fs.readFileSync(file, 'utf8');
+    if (!/normCdf\s*\(/.test(src)) continue;
+    if (!/0\.70710678/.test(src)) {
+      console.log(`${path.basename(file)}: normCdf present but no 1/sqrt(2) scaling -> Phi(x*sqrt(2))`);
+      bad++;
+    }
+  }
+  if (bad) { console.log(`\n${bad} file(s) with a wrong normal CDF`); process.exit(1); }
+  console.log('normal CDF scaling: ok');
+}
