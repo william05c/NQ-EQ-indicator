@@ -264,7 +264,10 @@ chNewHigh = math.min(math.max(pNewHigh, 0.0), 1.0)
 chNewLow  = math.min(math.max(pNewLow, 0.0), 1.0)
 roomUp    = chNewHigh > 0.60 and chNewLow < 0.20
 roomDown  = chNewLow > 0.60 and chNewHigh < 0.20
-roomTxt   = roomUp ? "ROOM IS UP" : roomDown ? "ROOM IS DOWN" : "BALANCED - NO EDGE"
+// Both extremes already locked is its own state, NOT "balanced": with little of
+// the session left neither can be exceeded, which is a conclusion, not a tie.
+dayDone   = chNewHigh < 0.15 and chNewLow < 0.15
+roomTxt   = dayDone ? "BOTH EXTREMES SET - DAY DONE" : roomUp ? "ROOM IS UP" : roomDown ? "ROOM IS DOWN" : "BALANCED - NO EDGE"
 roomCol   = roomUp ? hiCol : roomDown ? loCol : color.gray
 
 // ---------------- table ----------------
@@ -280,9 +283,9 @@ if showTable and barstate.islast
         table.cell(t, 0, 3, "LOW will finish", text_color = color.black)
         table.cell(t, 1, 3, str.tostring(iLo10, format.mintick) + " to " + str.tostring(iLo90, format.mintick), text_color = loCol)
         table.cell(t, 0, 4, "Chance of NEW high", text_color = color.black)
-        table.cell(t, 1, 4, str.tostring(chNewHigh * 100, "#") + "%  up to " + str.tostring(iHi90, format.mintick), text_color = hiCol)
+        table.cell(t, 1, 4, str.tostring(chNewHigh * 100, "#.0") + "%  up to " + str.tostring(iHi90, format.mintick), text_color = hiCol)
         table.cell(t, 0, 5, "Chance of NEW low", text_color = color.black)
-        table.cell(t, 1, 5, str.tostring(chNewLow * 100, "#") + "%  down to " + str.tostring(iLo10, format.mintick), text_color = loCol)
+        table.cell(t, 1, 5, str.tostring(chNewLow * 100, "#.0") + "%  down to " + str.tostring(iLo10, format.mintick), text_color = loCol)
         table.cell(t, 0, 6, "Where is the room", text_color = color.black)
         table.cell(t, 1, 6, roomTxt, text_color = roomCol)
         table.cell(t, 0, 7, "Swing left", text_color = color.black)
@@ -307,10 +310,10 @@ if barstate.islast
     if not na(statLbl)
         label.delete(statLbl)
     if showLabel and useIntraday
-        lblTxt = "NOWCAST  " + str.tostring(elapsed * 100, "#") + "% of the day\n" +
+        lblTxt = "NOWCAST  " + str.tostring(elapsed * 100, "#.0") + "% of the day\n" +
           "price " + str.tostring(pNow, format.mintick) + "\n" +
-          "NEW HIGH " + str.tostring(chNewHigh * 100, "#") + "%  up to " + str.tostring(iHi90, format.mintick) + "\n" +
-          "NEW LOW  " + str.tostring(chNewLow * 100, "#") + "%  down to " + str.tostring(iLo10, format.mintick) + "\n" +
+          "high so far " + str.tostring(hiRef, format.mintick) + "   low so far " + str.tostring(loRef, format.mintick) + "\n" +
+          "NEW HIGH " + str.tostring(chNewHigh * 100, "#.0") + "%   NEW LOW " + str.tostring(chNewLow * 100, "#.0") + "%\n" +
           roomTxt + "   room " + str.tostring(sigmaRem * z90, "#") + " pts"
         statLbl := label.new(bar_index, iHi90, lblTxt, style = label.style_label_down, color = roomCol, textcolor = color.white, size = size.small)
 
