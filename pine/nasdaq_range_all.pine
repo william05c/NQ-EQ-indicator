@@ -282,7 +282,7 @@ riskNQ    = "$" + str.tostring(math.round(room * 20), "#,###")
 riskMNQ   = "$" + str.tostring(math.round(room * 2), "#,###")
 
 // ---------------- table ----------------
-var table t = table.new(position.top_right, 2, 9, border_width = 1)
+var table t = table.new(position.top_right, 2, 10, border_width = 1)
 if showTable and barstate.islast
     table.cell(t, 0, 0, useIntraday ? "Nowcast" : "Range", bgcolor = color.new(color.gray, 85), text_color = color.black)
     table.cell(t, 1, 0, prof + " / " + timeframe.period, bgcolor = color.new(color.gray, 85), text_color = color.black)
@@ -303,6 +303,10 @@ if showTable and barstate.islast
         table.cell(t, 1, 7, str.tostring(chNewLow * 100, "#.0") + "%", text_color = loCol)
         table.cell(t, 0, 8, "Room left", text_color = color.black)
         table.cell(t, 1, 8, str.tostring(room, format.mintick) + " pts  1NQ " + riskNQ + " / 1MNQ " + riskMNQ, text_color = color.black)
+        // audit row: the bands and the probabilities must come from THIS number.
+        // room = sigmaRem * 1.645, so sigmaRem must equal room / 1.645.
+        table.cell(t, 0, 9, "Sigma (audit)", text_color = color.gray)
+        table.cell(t, 1, 9, str.tostring(sigmaRem, format.mintick) + " pts   check: room/1.645 = " + str.tostring(room / z90, format.mintick), text_color = color.gray)
     else
         table.cell(t, 0, 1, "Bands from bar", text_color = color.black)
         table.cell(t, 1, 1, dValid ? "ready" : "warming up", text_color = color.black)
