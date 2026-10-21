@@ -83,6 +83,9 @@ for (let t = WARMUP; t < n; t++) {
       h90: o * (1 + Math.exp(muU + q(resU, 0.9))),
       l10: o * (1 - Math.exp(muD + q(resD, 0.9))),
       l90: o * (1 - Math.exp(muD + q(resD, 0.1))),
+      // every field below is known BEFORE the session opens
+      prevRangePct: (rows[t - 1].high - rows[t - 1].low) / rows[t - 1].close,
+      gapPct: Math.abs(o - rows[t - 1].close) / rows[t - 1].close,
     });
   }
   resU.push(yU[t] - muU); resD.push(yD[t] - muD);
@@ -179,3 +182,36 @@ console.log(`  sitting in cash                0.0%`);
 const fadeTotal = base.trades.reduce((a, t) => a + t.dollars, 0);
 console.log(`  fade-the-band rule             ${(fadeTotal / STAKE * 100).toFixed(1)}% of a fixed $${STAKE} stake, i.e. -${(-fadeTotal).toFixed(0)} dollars over ${yrs.toFixed(1)} years`);
 console.log(`  time in the market             ${(base.trades.length / nS * 100).toFixed(1)}% of sessions (${base.trades.length} of ${nS})`);
+
+// ---------------- FILTER SPLIT (prior information only) ----------------
+// Any split must use variables knowable BEFORE the session opens. The first
+// version of this used the session's own range and its open-to-close move - both
+// contain the outcome, which is look-ahead, and it produced a fake Sharpe of 2.67.
+console.log('\nFILTER SPLIT - the clean close-exit fade, split by information known at the open');
+{
+  const T = base.trades;
+  const byDate = new Map(sessions.map((s) => [s.date, s]));
+  const enriched = T.map((t) => {
+    const s = byDate.get(t.date);
+    return { ...t, bandW: (s.h90 - s.l10) / s.o, prevRng: s.prevRangePct, gap: s.gapPct };
+  });
+  const splitBy = (key, label) => {
+    const vals = enriched.map((e) => e[key]).sort((a, b) => a - b);
+    const lo = vals[Math.floor(vals.length / 3)], hi = vals[Math.floor(2 * vals.length / 3)];
+    console.log(`  by ${label}:`);
+    for (const [name, g] of [
+      ['low', enriched.filter((e) => e[key] <= lo)],
+      ['mid', enriched.filter((e) => e[key] > lo && e[key] <= hi)],
+      ['high', enriched.filter((e) => e[key] > hi)],
+    ]) {
+      if (!g.length) continue;
+      const w = g.filter((e) => e.net > 0).length / g.length * 100;
+      const exp = mean(g.map((e) => e.dollars));
+      const sh = sd(g.map((e) => e.net)) > 0 ? (mean(g.map((e) => e.net)) / sd(g.map((e) => e.net))) * Math.sqrt(g.length / 10) : 0;
+      console.log(`    ${name.padEnd(5)} n=${String(g.length).padStart(3)}  win ${w.toFixed(1).padStart(5)}%  expectancy ${('$' + exp.toFixed(2)).padStart(9)}  Sharpe ${sh.toFixed(2).padStart(6)}`);
+    }
+  };
+  splitBy('bandW', 'predicted band width');
+  splitBy('prevRng', 'previous session range');
+  splitBy('gap', 'overnight gap size');
+}
