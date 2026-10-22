@@ -118,7 +118,7 @@ for (const [td, raw] of sess) {
   const entry = side === 'hi' ? Math.max(bar.o, h90) : Math.min(bar.o, l10);
   // path runs to the 11:30 time stop
   const path = bars.slice(idx + 1).filter((x) => x.el < W_HI);
-  candidates.push({ td, side, entry, H, at: bar.el, path });
+  candidates.push({ td, side, entry, H, at: bar.el, path, h90, l10 });
 }
 console.log(`sessions ${sess.size}  candidates ${candidates.length}  no touch in window ${noTouchInWindow}  too short ${skippedShort}`);
 
@@ -215,6 +215,107 @@ for (const f of FS) for (const g of GS) {
 }
 const positiveNeighbours = stability.filter((s) => s.exp > 0).length;
 
+
+// ---------- PROFIT CONCENTRATION ----------
+// How much of the result survives removing the best few trades? A strategy whose
+// edge is one or two outliers is a lottery ticket with a good story.
+function concentration(dollars) {
+  const sorted = [...dollars].sort((a, b) => b - a);
+  const total = dollars.reduce((s, x) => s + x, 0);
+  const out = [{ k: 0, n: dollars.length, expectancy: total / dollars.length, total }];
+  for (let k = 1; k <= 5; k++) {
+    const rest = sorted.slice(k);
+    if (!rest.length) break;
+    out.push({ k, n: rest.length, expectancy: rest.reduce((s, x) => s + x, 0) / rest.length, total: rest.reduce((s, x) => s + x, 0) });
+  }
+  return out;
+}
+const conc = concentration(bestTrades);
+// ---------- 4b. RUIN ANALYSIS via bootstrapped drawdowns ----------
+// Resample the 44 trades 10,000 times, recompute the max drawdown each time, and
+// ask what account size makes a 20% drawdown likely.
+function bootstrapDD(xs, iters = 10000) {
+  const dds = [];
+  for (let i = 0; i < iters; i++) {
+    let cum = 0, peak = 0, dd = 0;
+    for (let k = 0; k < xs.length; k++) {
+      cum += xs[Math.floor(Math.random() * xs.length)];
+      peak = Math.max(peak, cum);
+      dd = Math.min(dd, cum - peak);
+    }
+    dds.push(-dd);
+  }
+  dds.sort((a, b) => a - b);
+  return { p50: q(dds, 0.5), p95: q(dds, 0.95), p99: q(dds, 0.99) };
+}
+const ddDist = bootstrapDD(bestTrades);
+const ruin = {
+  ddBootstrap: ddDist,
+  observedDD: -best.maxDD,
+  accountFor20pctAtP50: ddDist.p50 / 0.20,
+  accountFor20pctAtP95: ddDist.p95 / 0.20,
+  note: 'no leverage means the account must be at least the $10,000 stake, so a 20% drawdown needs a run 10x the observed worst',
+};
+
+// ---------- 4c. KELLY ----------
+// f* = mean / variance of per-trade returns on the stake. Reported so it can be
+// rejected: a fraction whose numerator is statistically indistinguishable from
+// zero is not a sizing rule, it is a rounding error.
+const rets = bestTrades.map((x) => x / STAKE);
+const kelly = {
+  full: mean(rets) / (sd(rets) ** 2),
+  half: 0.5 * mean(rets) / (sd(rets) ** 2),
+  meanReturn: mean(rets), variance: sd(rets) ** 2,
+  rejectedBecause: `the 95% CI on expectancy spans zero, so the numerator is not distinguishable from zero`,
+};
+
+// ---------- 6c. ENTRY-RULE SENSITIVITY: first touch vs break persistence ----------
+// "Persist for N minutes" = N bars after the touch, the close is STILL beyond the
+// band. If the edge only exists on the immediate touch, it is a microstructure
+// effect; if it survives a delay, it is slower information.
+function runPersist(direction, f, g, persistMin) {
+  const T = [];
+  for (const c of candidates) {
+    if (persistMin > 0) {
+      const probe = c.path[persistMin - 1];
+      if (!probe) continue;
+      const stillOut = c.side === 'hi' ? probe.c >= c.h90 : probe.c <= c.l10;
+      if (!stillOut) continue;
+    }
+    const long = (c.side === 'lo') === (direction === 'fade');
+    const tgt = long ? c.entry + f * c.H : c.entry - f * c.H;
+    const stp = long ? c.entry - g * c.H : c.entry + g * c.H;
+    let exit = null, why = 'time';
+    const path = c.path.slice(persistMin);
+    for (const b of path) {
+      const hitT = long ? b.h >= tgt : b.l <= tgt;
+      const hitS = long ? b.l <= stp : b.h >= stp;
+      if (hitT && hitS) { exit = stp; why = 'stop'; break; }
+      if (hitS) { exit = stp; why = 'stop'; break; }
+      if (hitT) { exit = tgt; why = 'target'; break; }
+    }
+    if (exit === null) exit = path.length ? path[path.length - 1].c : c.entry;
+    const net = (long ? 1 : -1) * (exit - c.entry) / c.entry - COST;
+    T.push({ date: c.td, net: +net.toFixed(6), dollars: +(net * STAKE).toFixed(2), why });
+  }
+  if (T.length < 10) return { persistMin, n: T.length, expectancy: null };
+  const r = T.map((x) => x.dollars);
+  return {
+    persistMin, n: T.length,
+    winRate: r.filter((x) => x > 0).length / T.length * 100,
+    expectancy: mean(r), total: r.reduce((a, x) => a + x, 0),
+    tstat: sd(r) > 0 ? mean(r) / (sd(r) / Math.sqrt(T.length)) : 0,
+  };
+}
+const persistence = [0, 1, 2, 5, 10, 15].map((m) => runPersist(best.direction, best.target, best.stop, m));
+
+// ---------- 3. TRADE LOGS for the best few ----------
+const topLogs = ranked.slice(0, 3).map((r) => ({
+  variant: `${r.direction} ${r.target}H/${r.stop}H`,
+  n: r.n, expectancy: r.expectancy, tstat: r.tstat,
+  trades: r.trades,
+}));
+
 const out = {
   generated: new Date().toISOString(),
   spec: {
@@ -242,6 +343,11 @@ const out = {
     expectancyCI95: ciExp, winRateCI95: ciWin,
   },
   bestTradeLog: best.trades,
+  topTradeLogs: topLogs,
+  ruin,
+  profitConcentration: conc,
+  kelly,
+  persistence,
   yearSplit,
   parameterStability: { cellsTested: stability.length, positive: positiveNeighbours, grid: stability },
 };
@@ -254,9 +360,9 @@ console.log('\n=== FIRST 2 CASH HOURS - spec, then results ===');
 console.log(`entry    : first band touch 09:30-11:30 ET, filled at the band`);
 console.log(`exit     : target f*H / stop g*H / TIME STOP at 11:30 ET`);
 console.log(`cost     : ${COST * 10000} bp    stake: $${STAKE}\n`);
-console.log('dir       f     g     n   win%   expectancy    total    maxDD     t   VaR95  CVaR95  stops  timeouts');
+console.log('dir       f     g     n   win%   expectancy    total    maxDD     t   VaR95  CVaR95  avgW   avgL  stops  timeouts');
 for (const r of ranked.slice(0, 12)) {
-  console.log(`${r.direction.padEnd(9)}${r.target.toFixed(1).padStart(4)} ${r.stop.toFixed(1).padStart(4)} ${String(r.n).padStart(5)} ${r.winRate.toFixed(1).padStart(6)} ${('$' + r.expectancy.toFixed(2)).padStart(11)} ${('$' + r.total.toFixed(0)).padStart(8)} ${('$' + r.maxDD.toFixed(0)).padStart(7)} ${r.tstat.toFixed(2).padStart(6)} ${('$' + r.var95.toFixed(0)).padStart(7)} ${('$' + r.cvar95.toFixed(0)).padStart(7)} ${String(r.stops).padStart(6)} ${String(r.timeouts).padStart(9)}`);
+  console.log(`${r.direction.padEnd(9)}${r.target.toFixed(1).padStart(4)} ${r.stop.toFixed(1).padStart(4)} ${String(r.n).padStart(5)} ${r.winRate.toFixed(1).padStart(6)} ${('$' + r.expectancy.toFixed(2)).padStart(11)} ${('$' + r.total.toFixed(0)).padStart(8)} ${('$' + r.maxDD.toFixed(0)).padStart(7)} ${r.tstat.toFixed(2).padStart(6)} ${('$' + r.var95.toFixed(0)).padStart(7)} ${('$' + r.cvar95.toFixed(0)).padStart(7)} ${('$' + r.avgWin.toFixed(0)).padStart(5)} ${('$' + r.avgLoss.toFixed(0)).padStart(6)} ${String(r.stops).padStart(6)} ${String(r.timeouts).padStart(9)}`);
 }
 console.log(`\nBEST CELL: ${best.direction} ${best.target}H/${best.stop}H`);
 console.log(`  expectancy $${best.expectancy.toFixed(2)}  95% CI [$${ciExp.lo.toFixed(2)}, $${ciExp.hi.toFixed(2)}]  ${ciExp.lo > 0 ? 'CI EXCLUDES ZERO' : 'CI INCLUDES ZERO'}`);
@@ -265,6 +371,28 @@ console.log(`  skew ${best.skew.toFixed(2)}  excess kurtosis ${best.kurt.toFixed
 console.log(`  max drawdown $${best.maxDD.toFixed(0)} over ${best.maxUnderwaterTrades} trades underwater`);
 console.log(`  targets ${best.targets}  stops ${best.stops}  time stops ${best.timeouts}`);
 console.log(`\nMULTIPLE TESTING: ${grid.length} cells, ~${(grid.length * 0.0455).toFixed(1)} expected |t|>2 by chance; observed ${grid.filter((x) => Math.abs(x.tstat) > 2).length}`);
+console.log(`\nPROFIT CONCENTRATION (drop the k largest trades)`);
+for (const c of conc) console.log(`  drop ${c.k}: n=${String(c.n).padStart(2)}  expectancy $${c.expectancy.toFixed(2).padStart(7)}  total $${c.total.toFixed(0).padStart(6)}`);
+
+console.log(`\nRUIN ANALYSIS (bootstrapped drawdowns, 10,000 resamples of the 44 trades)`);
+console.log(`  observed max drawdown        $${ruin.observedDD.toFixed(0)}`);
+console.log(`  bootstrapped drawdown  p50 $${ddDist.p50.toFixed(0)}   p95 $${ddDist.p95.toFixed(0)}   p99 $${ddDist.p99.toFixed(0)}`);
+console.log(`  account size making a 20% drawdown likely: $${ruin.accountFor20pctAtP50.toFixed(0)} (median) / $${ruin.accountFor20pctAtP95.toFixed(0)} (95th)`);
+console.log(`  no leverage forces the account >= the $${STAKE} stake, so a 20% drawdown needs $${(0.2 * STAKE).toFixed(0)} of losses`);
+console.log(`  = ${((0.2 * STAKE) / ruin.ddBootstrap.p95).toFixed(1)}x the 95th-percentile bootstrapped drawdown`);
+
+console.log(`\nKELLY`);
+console.log(`  mean return per trade ${(kelly.meanReturn * 100).toFixed(4)}%   variance ${(kelly.variance * 1e4).toFixed(2)}e-4`);
+console.log(`  full Kelly ${(kelly.full * 100).toFixed(1)}% of capital per trade   half Kelly ${(kelly.half * 100).toFixed(1)}%`);
+console.log(`  REJECTED: ${kelly.rejectedBecause}`);
+
+console.log(`\nENTRY-RULE SENSITIVITY: first touch vs requiring the break to persist`);
+console.log('  persist  n   win%   expectancy     total     t');
+for (const x of persistence) {
+  if (x.expectancy === null) { console.log(`  ${String(x.persistMin).padStart(4)} min ${String(x.n).padStart(4)}   too few trades`); continue; }
+  console.log(`  ${String(x.persistMin).padStart(4)} min ${String(x.n).padStart(4)} ${x.winRate.toFixed(1).padStart(6)} ${('$' + x.expectancy.toFixed(2)).padStart(11)} ${('$' + x.total.toFixed(0)).padStart(8)} ${x.tstat.toFixed(2).padStart(6)}`);
+}
+
 console.log(`\nROBUSTNESS by year:`);
 for (const y of yearSplit) console.log(`  ${y.year}  n=${String(y.n).padStart(3)}  expectancy $${y.expectancy.toFixed(2)}  total $${y.total.toFixed(0)}`);
 console.log(`\nPARAMETER STABILITY: ${positiveNeighbours} of ${stability.length} cells positive for the same direction`);

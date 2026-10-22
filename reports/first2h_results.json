@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-22T15:52:31.140Z",
+  "generated": "2026-10-22T15:56:27.413Z",
   "spec": {
     "instrument": "CME NQ front-month, 1-minute bars",
     "window": "entries only 09:30-11:30 ET (930-1050 min after the 18:00 open)",
@@ -1995,8 +1995,8 @@
     "targets": 3,
     "timeouts": 41,
     "expectancyCI95": {
-      "lo": -4.634090909090913,
-      "hi": 34.32727272727272
+      "lo": -4.912045454545453,
+      "hi": 34.50659090909091
     },
     "winRateCI95": {
       "lo": 36.36363636363637,
@@ -2443,6 +2443,1458 @@
       "net": -0.004918,
       "dollars": -49.18,
       "at": 1039
+    }
+  ],
+  "topTradeLogs": [
+    {
+      "variant": "fade 0.8H/1H",
+      "n": 44,
+      "expectancy": 12.959545454545458,
+      "tstat": 1.283433537082505,
+      "trades": [
+        {
+          "date": "2023-05-26",
+          "side": "short",
+          "entry": 16778.7,
+          "exit": 16772.5,
+          "why": "time",
+          "net": 0.00017,
+          "dollars": 1.7,
+          "at": 1009
+        },
+        {
+          "date": "2023-07-12",
+          "side": "short",
+          "entry": 17848.41,
+          "exit": 17799,
+          "why": "time",
+          "net": 0.002568,
+          "dollars": 25.68,
+          "at": 980
+        },
+        {
+          "date": "2023-07-28",
+          "side": "short",
+          "entry": 18217.34,
+          "exit": 18213.5,
+          "why": "time",
+          "net": 0.000011,
+          "dollars": 0.11,
+          "at": 1044
+        },
+        {
+          "date": "2023-11-14",
+          "side": "short",
+          "entry": 17984.8,
+          "exit": 18019.5,
+          "why": "time",
+          "net": -0.00213,
+          "dollars": -21.3,
+          "at": 931
+        },
+        {
+          "date": "2023-12-04",
+          "side": "long",
+          "entry": 17894.95,
+          "exit": 17919,
+          "why": "time",
+          "net": 0.001144,
+          "dollars": 11.44,
+          "at": 993
+        },
+        {
+          "date": "2024-01-02",
+          "side": "long",
+          "entry": 18746.71,
+          "exit": 18697.75,
+          "why": "time",
+          "net": -0.002812,
+          "dollars": -28.12,
+          "at": 939
+        },
+        {
+          "date": "2024-01-17",
+          "side": "long",
+          "entry": 18652.9,
+          "exit": 18764.5,
+          "why": "time",
+          "net": 0.005783,
+          "dollars": 57.83,
+          "at": 953
+        },
+        {
+          "date": "2024-02-13",
+          "side": "long",
+          "entry": 19561.5,
+          "exit": 19684.5,
+          "why": "time",
+          "net": 0.006088,
+          "dollars": 60.88,
+          "at": 930
+        },
+        {
+          "date": "2024-03-05",
+          "side": "long",
+          "entry": 19902.14,
+          "exit": 19900.25,
+          "why": "time",
+          "net": -0.000295,
+          "dollars": -2.95,
+          "at": 985
+        },
+        {
+          "date": "2024-04-02",
+          "side": "long",
+          "entry": 19953.59,
+          "exit": 19960.75,
+          "why": "time",
+          "net": 0.000159,
+          "dollars": 1.59,
+          "at": 939
+        },
+        {
+          "date": "2024-05-31",
+          "side": "long",
+          "entry": 20031.61,
+          "exit": 20029,
+          "why": "time",
+          "net": -0.00033,
+          "dollars": -3.3,
+          "at": 1037
+        },
+        {
+          "date": "2024-07-11",
+          "side": "long",
+          "entry": 22092.44,
+          "exit": 21971.75,
+          "why": "time",
+          "net": -0.005663,
+          "dollars": -56.63,
+          "at": 983
+        },
+        {
+          "date": "2024-07-17",
+          "side": "long",
+          "entry": 21642.55,
+          "exit": 21545.25,
+          "why": "time",
+          "net": -0.004696,
+          "dollars": -46.96,
+          "at": 946
+        },
+        {
+          "date": "2024-07-24",
+          "side": "long",
+          "entry": 20898.2,
+          "exit": 20825.5,
+          "why": "time",
+          "net": -0.003679,
+          "dollars": -36.79,
+          "at": 997
+        },
+        {
+          "date": "2024-07-31",
+          "side": "short",
+          "entry": 20806.5,
+          "exit": 20920.5,
+          "why": "time",
+          "net": -0.005679,
+          "dollars": -56.79,
+          "at": 930
+        },
+        {
+          "date": "2024-08-05",
+          "side": "long",
+          "entry": 19039.75,
+          "exit": 19502.42,
+          "why": "target",
+          "net": 0.0241,
+          "dollars": 241,
+          "at": 930
+        },
+        {
+          "date": "2024-08-29",
+          "side": "short",
+          "entry": 21062.23,
+          "exit": 21056,
+          "why": "time",
+          "net": 0.000096,
+          "dollars": 0.96,
+          "at": 957
+        },
+        {
+          "date": "2024-09-03",
+          "side": "long",
+          "entry": 20657.71,
+          "exit": 20636.5,
+          "why": "time",
+          "net": -0.001227,
+          "dollars": -12.27,
+          "at": 1005
+        },
+        {
+          "date": "2024-09-06",
+          "side": "long",
+          "entry": 19918.73,
+          "exit": 19939,
+          "why": "time",
+          "net": 0.000818,
+          "dollars": 8.18,
+          "at": 1040
+        },
+        {
+          "date": "2024-09-19",
+          "side": "short",
+          "entry": 21246.75,
+          "exit": 21331.25,
+          "why": "time",
+          "net": -0.004177,
+          "dollars": -41.77,
+          "at": 930
+        },
+        {
+          "date": "2024-10-01",
+          "side": "long",
+          "entry": 21069.17,
+          "exit": 21081.5,
+          "why": "time",
+          "net": 0.000385,
+          "dollars": 3.85,
+          "at": 992
+        },
+        {
+          "date": "2024-10-31",
+          "side": "long",
+          "entry": 21348.41,
+          "exit": 21293.5,
+          "why": "time",
+          "net": -0.002772,
+          "dollars": -27.72,
+          "at": 961
+        },
+        {
+          "date": "2024-11-06",
+          "side": "short",
+          "entry": 21953.51,
+          "exit": 21973.5,
+          "why": "time",
+          "net": -0.001111,
+          "dollars": -11.11,
+          "at": 937
+        },
+        {
+          "date": "2024-11-15",
+          "side": "long",
+          "entry": 21875.61,
+          "exit": 21775.25,
+          "why": "time",
+          "net": -0.004788,
+          "dollars": -47.88,
+          "at": 962
+        },
+        {
+          "date": "2024-12-11",
+          "side": "short",
+          "entry": 22931.87,
+          "exit": 22954.25,
+          "why": "time",
+          "net": -0.001176,
+          "dollars": -11.76,
+          "at": 975
+        },
+        {
+          "date": "2024-12-27",
+          "side": "long",
+          "entry": 22466.65,
+          "exit": 22525.25,
+          "why": "time",
+          "net": 0.002408,
+          "dollars": 24.08,
+          "at": 973
+        },
+        {
+          "date": "2024-12-30",
+          "side": "long",
+          "entry": 22167.91,
+          "exit": 22292.75,
+          "why": "time",
+          "net": 0.005431,
+          "dollars": 54.31,
+          "at": 961
+        },
+        {
+          "date": "2025-01-10",
+          "side": "long",
+          "entry": 21800.31,
+          "exit": 21848,
+          "why": "time",
+          "net": 0.001987,
+          "dollars": 19.87,
+          "at": 970
+        },
+        {
+          "date": "2025-01-15",
+          "side": "short",
+          "entry": 22261.64,
+          "exit": 22246.75,
+          "why": "time",
+          "net": 0.000469,
+          "dollars": 4.69,
+          "at": 961
+        },
+        {
+          "date": "2025-01-27",
+          "side": "long",
+          "entry": 22030.25,
+          "exit": 22312.56,
+          "why": "target",
+          "net": 0.012615,
+          "dollars": 126.15,
+          "at": 930
+        },
+        {
+          "date": "2025-02-25",
+          "side": "long",
+          "entry": 21989.66,
+          "exit": 21956.25,
+          "why": "time",
+          "net": -0.001719,
+          "dollars": -17.19,
+          "at": 980
+        },
+        {
+          "date": "2025-03-10",
+          "side": "long",
+          "entry": 20454.51,
+          "exit": 20531.25,
+          "why": "time",
+          "net": 0.003552,
+          "dollars": 35.52,
+          "at": 1016
+        },
+        {
+          "date": "2025-03-28",
+          "side": "long",
+          "entry": 20265.54,
+          "exit": 20297,
+          "why": "time",
+          "net": 0.001352,
+          "dollars": 13.52,
+          "at": 1024
+        },
+        {
+          "date": "2025-04-04",
+          "side": "long",
+          "entry": 18728.51,
+          "exit": 18704,
+          "why": "time",
+          "net": -0.001509,
+          "dollars": -15.09,
+          "at": 943
+        },
+        {
+          "date": "2025-04-07",
+          "side": "short",
+          "entry": 18424.04,
+          "exit": 17879.6,
+          "why": "target",
+          "net": 0.02935,
+          "dollars": 293.5,
+          "at": 972
+        },
+        {
+          "date": "2025-05-12",
+          "side": "short",
+          "entry": 21634.25,
+          "exit": 21495.25,
+          "why": "time",
+          "net": 0.006225,
+          "dollars": 62.25,
+          "at": 930
+        },
+        {
+          "date": "2025-06-16",
+          "side": "short",
+          "entry": 22677.78,
+          "exit": 22684.25,
+          "why": "time",
+          "net": -0.000485,
+          "dollars": -4.85,
+          "at": 974
+        },
+        {
+          "date": "2025-08-01",
+          "side": "long",
+          "entry": 23447.72,
+          "exit": 23396.75,
+          "why": "time",
+          "net": -0.002374,
+          "dollars": -23.74,
+          "at": 943
+        },
+        {
+          "date": "2025-08-04",
+          "side": "short",
+          "entry": 23755.66,
+          "exit": 23713,
+          "why": "time",
+          "net": 0.001596,
+          "dollars": 15.96,
+          "at": 961
+        },
+        {
+          "date": "2025-08-20",
+          "side": "long",
+          "entry": 23601.64,
+          "exit": 23712,
+          "why": "time",
+          "net": 0.004476,
+          "dollars": 44.76,
+          "at": 969
+        },
+        {
+          "date": "2025-08-22",
+          "side": "short",
+          "entry": 24060.53,
+          "exit": 24116.5,
+          "why": "time",
+          "net": -0.002526,
+          "dollars": -25.26,
+          "at": 969
+        },
+        {
+          "date": "2025-09-02",
+          "side": "long",
+          "entry": 23587.75,
+          "exit": 23609.5,
+          "why": "time",
+          "net": 0.000722,
+          "dollars": 7.22,
+          "at": 930
+        },
+        {
+          "date": "2025-09-18",
+          "side": "short",
+          "entry": 25034.06,
+          "exit": 25039.5,
+          "why": "time",
+          "net": -0.000417,
+          "dollars": -4.17,
+          "at": 981
+        },
+        {
+          "date": "2025-10-10",
+          "side": "long",
+          "entry": 25203.9,
+          "exit": 25085,
+          "why": "time",
+          "net": -0.004918,
+          "dollars": -49.18,
+          "at": 1039
+        }
+      ]
+    },
+    {
+      "variant": "fade 0.8H/1.5H",
+      "n": 44,
+      "expectancy": 12.959545454545458,
+      "tstat": 1.283433537082505,
+      "trades": [
+        {
+          "date": "2023-05-26",
+          "side": "short",
+          "entry": 16778.7,
+          "exit": 16772.5,
+          "why": "time",
+          "net": 0.00017,
+          "dollars": 1.7,
+          "at": 1009
+        },
+        {
+          "date": "2023-07-12",
+          "side": "short",
+          "entry": 17848.41,
+          "exit": 17799,
+          "why": "time",
+          "net": 0.002568,
+          "dollars": 25.68,
+          "at": 980
+        },
+        {
+          "date": "2023-07-28",
+          "side": "short",
+          "entry": 18217.34,
+          "exit": 18213.5,
+          "why": "time",
+          "net": 0.000011,
+          "dollars": 0.11,
+          "at": 1044
+        },
+        {
+          "date": "2023-11-14",
+          "side": "short",
+          "entry": 17984.8,
+          "exit": 18019.5,
+          "why": "time",
+          "net": -0.00213,
+          "dollars": -21.3,
+          "at": 931
+        },
+        {
+          "date": "2023-12-04",
+          "side": "long",
+          "entry": 17894.95,
+          "exit": 17919,
+          "why": "time",
+          "net": 0.001144,
+          "dollars": 11.44,
+          "at": 993
+        },
+        {
+          "date": "2024-01-02",
+          "side": "long",
+          "entry": 18746.71,
+          "exit": 18697.75,
+          "why": "time",
+          "net": -0.002812,
+          "dollars": -28.12,
+          "at": 939
+        },
+        {
+          "date": "2024-01-17",
+          "side": "long",
+          "entry": 18652.9,
+          "exit": 18764.5,
+          "why": "time",
+          "net": 0.005783,
+          "dollars": 57.83,
+          "at": 953
+        },
+        {
+          "date": "2024-02-13",
+          "side": "long",
+          "entry": 19561.5,
+          "exit": 19684.5,
+          "why": "time",
+          "net": 0.006088,
+          "dollars": 60.88,
+          "at": 930
+        },
+        {
+          "date": "2024-03-05",
+          "side": "long",
+          "entry": 19902.14,
+          "exit": 19900.25,
+          "why": "time",
+          "net": -0.000295,
+          "dollars": -2.95,
+          "at": 985
+        },
+        {
+          "date": "2024-04-02",
+          "side": "long",
+          "entry": 19953.59,
+          "exit": 19960.75,
+          "why": "time",
+          "net": 0.000159,
+          "dollars": 1.59,
+          "at": 939
+        },
+        {
+          "date": "2024-05-31",
+          "side": "long",
+          "entry": 20031.61,
+          "exit": 20029,
+          "why": "time",
+          "net": -0.00033,
+          "dollars": -3.3,
+          "at": 1037
+        },
+        {
+          "date": "2024-07-11",
+          "side": "long",
+          "entry": 22092.44,
+          "exit": 21971.75,
+          "why": "time",
+          "net": -0.005663,
+          "dollars": -56.63,
+          "at": 983
+        },
+        {
+          "date": "2024-07-17",
+          "side": "long",
+          "entry": 21642.55,
+          "exit": 21545.25,
+          "why": "time",
+          "net": -0.004696,
+          "dollars": -46.96,
+          "at": 946
+        },
+        {
+          "date": "2024-07-24",
+          "side": "long",
+          "entry": 20898.2,
+          "exit": 20825.5,
+          "why": "time",
+          "net": -0.003679,
+          "dollars": -36.79,
+          "at": 997
+        },
+        {
+          "date": "2024-07-31",
+          "side": "short",
+          "entry": 20806.5,
+          "exit": 20920.5,
+          "why": "time",
+          "net": -0.005679,
+          "dollars": -56.79,
+          "at": 930
+        },
+        {
+          "date": "2024-08-05",
+          "side": "long",
+          "entry": 19039.75,
+          "exit": 19502.42,
+          "why": "target",
+          "net": 0.0241,
+          "dollars": 241,
+          "at": 930
+        },
+        {
+          "date": "2024-08-29",
+          "side": "short",
+          "entry": 21062.23,
+          "exit": 21056,
+          "why": "time",
+          "net": 0.000096,
+          "dollars": 0.96,
+          "at": 957
+        },
+        {
+          "date": "2024-09-03",
+          "side": "long",
+          "entry": 20657.71,
+          "exit": 20636.5,
+          "why": "time",
+          "net": -0.001227,
+          "dollars": -12.27,
+          "at": 1005
+        },
+        {
+          "date": "2024-09-06",
+          "side": "long",
+          "entry": 19918.73,
+          "exit": 19939,
+          "why": "time",
+          "net": 0.000818,
+          "dollars": 8.18,
+          "at": 1040
+        },
+        {
+          "date": "2024-09-19",
+          "side": "short",
+          "entry": 21246.75,
+          "exit": 21331.25,
+          "why": "time",
+          "net": -0.004177,
+          "dollars": -41.77,
+          "at": 930
+        },
+        {
+          "date": "2024-10-01",
+          "side": "long",
+          "entry": 21069.17,
+          "exit": 21081.5,
+          "why": "time",
+          "net": 0.000385,
+          "dollars": 3.85,
+          "at": 992
+        },
+        {
+          "date": "2024-10-31",
+          "side": "long",
+          "entry": 21348.41,
+          "exit": 21293.5,
+          "why": "time",
+          "net": -0.002772,
+          "dollars": -27.72,
+          "at": 961
+        },
+        {
+          "date": "2024-11-06",
+          "side": "short",
+          "entry": 21953.51,
+          "exit": 21973.5,
+          "why": "time",
+          "net": -0.001111,
+          "dollars": -11.11,
+          "at": 937
+        },
+        {
+          "date": "2024-11-15",
+          "side": "long",
+          "entry": 21875.61,
+          "exit": 21775.25,
+          "why": "time",
+          "net": -0.004788,
+          "dollars": -47.88,
+          "at": 962
+        },
+        {
+          "date": "2024-12-11",
+          "side": "short",
+          "entry": 22931.87,
+          "exit": 22954.25,
+          "why": "time",
+          "net": -0.001176,
+          "dollars": -11.76,
+          "at": 975
+        },
+        {
+          "date": "2024-12-27",
+          "side": "long",
+          "entry": 22466.65,
+          "exit": 22525.25,
+          "why": "time",
+          "net": 0.002408,
+          "dollars": 24.08,
+          "at": 973
+        },
+        {
+          "date": "2024-12-30",
+          "side": "long",
+          "entry": 22167.91,
+          "exit": 22292.75,
+          "why": "time",
+          "net": 0.005431,
+          "dollars": 54.31,
+          "at": 961
+        },
+        {
+          "date": "2025-01-10",
+          "side": "long",
+          "entry": 21800.31,
+          "exit": 21848,
+          "why": "time",
+          "net": 0.001987,
+          "dollars": 19.87,
+          "at": 970
+        },
+        {
+          "date": "2025-01-15",
+          "side": "short",
+          "entry": 22261.64,
+          "exit": 22246.75,
+          "why": "time",
+          "net": 0.000469,
+          "dollars": 4.69,
+          "at": 961
+        },
+        {
+          "date": "2025-01-27",
+          "side": "long",
+          "entry": 22030.25,
+          "exit": 22312.56,
+          "why": "target",
+          "net": 0.012615,
+          "dollars": 126.15,
+          "at": 930
+        },
+        {
+          "date": "2025-02-25",
+          "side": "long",
+          "entry": 21989.66,
+          "exit": 21956.25,
+          "why": "time",
+          "net": -0.001719,
+          "dollars": -17.19,
+          "at": 980
+        },
+        {
+          "date": "2025-03-10",
+          "side": "long",
+          "entry": 20454.51,
+          "exit": 20531.25,
+          "why": "time",
+          "net": 0.003552,
+          "dollars": 35.52,
+          "at": 1016
+        },
+        {
+          "date": "2025-03-28",
+          "side": "long",
+          "entry": 20265.54,
+          "exit": 20297,
+          "why": "time",
+          "net": 0.001352,
+          "dollars": 13.52,
+          "at": 1024
+        },
+        {
+          "date": "2025-04-04",
+          "side": "long",
+          "entry": 18728.51,
+          "exit": 18704,
+          "why": "time",
+          "net": -0.001509,
+          "dollars": -15.09,
+          "at": 943
+        },
+        {
+          "date": "2025-04-07",
+          "side": "short",
+          "entry": 18424.04,
+          "exit": 17879.6,
+          "why": "target",
+          "net": 0.02935,
+          "dollars": 293.5,
+          "at": 972
+        },
+        {
+          "date": "2025-05-12",
+          "side": "short",
+          "entry": 21634.25,
+          "exit": 21495.25,
+          "why": "time",
+          "net": 0.006225,
+          "dollars": 62.25,
+          "at": 930
+        },
+        {
+          "date": "2025-06-16",
+          "side": "short",
+          "entry": 22677.78,
+          "exit": 22684.25,
+          "why": "time",
+          "net": -0.000485,
+          "dollars": -4.85,
+          "at": 974
+        },
+        {
+          "date": "2025-08-01",
+          "side": "long",
+          "entry": 23447.72,
+          "exit": 23396.75,
+          "why": "time",
+          "net": -0.002374,
+          "dollars": -23.74,
+          "at": 943
+        },
+        {
+          "date": "2025-08-04",
+          "side": "short",
+          "entry": 23755.66,
+          "exit": 23713,
+          "why": "time",
+          "net": 0.001596,
+          "dollars": 15.96,
+          "at": 961
+        },
+        {
+          "date": "2025-08-20",
+          "side": "long",
+          "entry": 23601.64,
+          "exit": 23712,
+          "why": "time",
+          "net": 0.004476,
+          "dollars": 44.76,
+          "at": 969
+        },
+        {
+          "date": "2025-08-22",
+          "side": "short",
+          "entry": 24060.53,
+          "exit": 24116.5,
+          "why": "time",
+          "net": -0.002526,
+          "dollars": -25.26,
+          "at": 969
+        },
+        {
+          "date": "2025-09-02",
+          "side": "long",
+          "entry": 23587.75,
+          "exit": 23609.5,
+          "why": "time",
+          "net": 0.000722,
+          "dollars": 7.22,
+          "at": 930
+        },
+        {
+          "date": "2025-09-18",
+          "side": "short",
+          "entry": 25034.06,
+          "exit": 25039.5,
+          "why": "time",
+          "net": -0.000417,
+          "dollars": -4.17,
+          "at": 981
+        },
+        {
+          "date": "2025-10-10",
+          "side": "long",
+          "entry": 25203.9,
+          "exit": 25085,
+          "why": "time",
+          "net": -0.004918,
+          "dollars": -49.18,
+          "at": 1039
+        }
+      ]
+    },
+    {
+      "variant": "fade 0.8H/2H",
+      "n": 44,
+      "expectancy": 12.959545454545458,
+      "tstat": 1.283433537082505,
+      "trades": [
+        {
+          "date": "2023-05-26",
+          "side": "short",
+          "entry": 16778.7,
+          "exit": 16772.5,
+          "why": "time",
+          "net": 0.00017,
+          "dollars": 1.7,
+          "at": 1009
+        },
+        {
+          "date": "2023-07-12",
+          "side": "short",
+          "entry": 17848.41,
+          "exit": 17799,
+          "why": "time",
+          "net": 0.002568,
+          "dollars": 25.68,
+          "at": 980
+        },
+        {
+          "date": "2023-07-28",
+          "side": "short",
+          "entry": 18217.34,
+          "exit": 18213.5,
+          "why": "time",
+          "net": 0.000011,
+          "dollars": 0.11,
+          "at": 1044
+        },
+        {
+          "date": "2023-11-14",
+          "side": "short",
+          "entry": 17984.8,
+          "exit": 18019.5,
+          "why": "time",
+          "net": -0.00213,
+          "dollars": -21.3,
+          "at": 931
+        },
+        {
+          "date": "2023-12-04",
+          "side": "long",
+          "entry": 17894.95,
+          "exit": 17919,
+          "why": "time",
+          "net": 0.001144,
+          "dollars": 11.44,
+          "at": 993
+        },
+        {
+          "date": "2024-01-02",
+          "side": "long",
+          "entry": 18746.71,
+          "exit": 18697.75,
+          "why": "time",
+          "net": -0.002812,
+          "dollars": -28.12,
+          "at": 939
+        },
+        {
+          "date": "2024-01-17",
+          "side": "long",
+          "entry": 18652.9,
+          "exit": 18764.5,
+          "why": "time",
+          "net": 0.005783,
+          "dollars": 57.83,
+          "at": 953
+        },
+        {
+          "date": "2024-02-13",
+          "side": "long",
+          "entry": 19561.5,
+          "exit": 19684.5,
+          "why": "time",
+          "net": 0.006088,
+          "dollars": 60.88,
+          "at": 930
+        },
+        {
+          "date": "2024-03-05",
+          "side": "long",
+          "entry": 19902.14,
+          "exit": 19900.25,
+          "why": "time",
+          "net": -0.000295,
+          "dollars": -2.95,
+          "at": 985
+        },
+        {
+          "date": "2024-04-02",
+          "side": "long",
+          "entry": 19953.59,
+          "exit": 19960.75,
+          "why": "time",
+          "net": 0.000159,
+          "dollars": 1.59,
+          "at": 939
+        },
+        {
+          "date": "2024-05-31",
+          "side": "long",
+          "entry": 20031.61,
+          "exit": 20029,
+          "why": "time",
+          "net": -0.00033,
+          "dollars": -3.3,
+          "at": 1037
+        },
+        {
+          "date": "2024-07-11",
+          "side": "long",
+          "entry": 22092.44,
+          "exit": 21971.75,
+          "why": "time",
+          "net": -0.005663,
+          "dollars": -56.63,
+          "at": 983
+        },
+        {
+          "date": "2024-07-17",
+          "side": "long",
+          "entry": 21642.55,
+          "exit": 21545.25,
+          "why": "time",
+          "net": -0.004696,
+          "dollars": -46.96,
+          "at": 946
+        },
+        {
+          "date": "2024-07-24",
+          "side": "long",
+          "entry": 20898.2,
+          "exit": 20825.5,
+          "why": "time",
+          "net": -0.003679,
+          "dollars": -36.79,
+          "at": 997
+        },
+        {
+          "date": "2024-07-31",
+          "side": "short",
+          "entry": 20806.5,
+          "exit": 20920.5,
+          "why": "time",
+          "net": -0.005679,
+          "dollars": -56.79,
+          "at": 930
+        },
+        {
+          "date": "2024-08-05",
+          "side": "long",
+          "entry": 19039.75,
+          "exit": 19502.42,
+          "why": "target",
+          "net": 0.0241,
+          "dollars": 241,
+          "at": 930
+        },
+        {
+          "date": "2024-08-29",
+          "side": "short",
+          "entry": 21062.23,
+          "exit": 21056,
+          "why": "time",
+          "net": 0.000096,
+          "dollars": 0.96,
+          "at": 957
+        },
+        {
+          "date": "2024-09-03",
+          "side": "long",
+          "entry": 20657.71,
+          "exit": 20636.5,
+          "why": "time",
+          "net": -0.001227,
+          "dollars": -12.27,
+          "at": 1005
+        },
+        {
+          "date": "2024-09-06",
+          "side": "long",
+          "entry": 19918.73,
+          "exit": 19939,
+          "why": "time",
+          "net": 0.000818,
+          "dollars": 8.18,
+          "at": 1040
+        },
+        {
+          "date": "2024-09-19",
+          "side": "short",
+          "entry": 21246.75,
+          "exit": 21331.25,
+          "why": "time",
+          "net": -0.004177,
+          "dollars": -41.77,
+          "at": 930
+        },
+        {
+          "date": "2024-10-01",
+          "side": "long",
+          "entry": 21069.17,
+          "exit": 21081.5,
+          "why": "time",
+          "net": 0.000385,
+          "dollars": 3.85,
+          "at": 992
+        },
+        {
+          "date": "2024-10-31",
+          "side": "long",
+          "entry": 21348.41,
+          "exit": 21293.5,
+          "why": "time",
+          "net": -0.002772,
+          "dollars": -27.72,
+          "at": 961
+        },
+        {
+          "date": "2024-11-06",
+          "side": "short",
+          "entry": 21953.51,
+          "exit": 21973.5,
+          "why": "time",
+          "net": -0.001111,
+          "dollars": -11.11,
+          "at": 937
+        },
+        {
+          "date": "2024-11-15",
+          "side": "long",
+          "entry": 21875.61,
+          "exit": 21775.25,
+          "why": "time",
+          "net": -0.004788,
+          "dollars": -47.88,
+          "at": 962
+        },
+        {
+          "date": "2024-12-11",
+          "side": "short",
+          "entry": 22931.87,
+          "exit": 22954.25,
+          "why": "time",
+          "net": -0.001176,
+          "dollars": -11.76,
+          "at": 975
+        },
+        {
+          "date": "2024-12-27",
+          "side": "long",
+          "entry": 22466.65,
+          "exit": 22525.25,
+          "why": "time",
+          "net": 0.002408,
+          "dollars": 24.08,
+          "at": 973
+        },
+        {
+          "date": "2024-12-30",
+          "side": "long",
+          "entry": 22167.91,
+          "exit": 22292.75,
+          "why": "time",
+          "net": 0.005431,
+          "dollars": 54.31,
+          "at": 961
+        },
+        {
+          "date": "2025-01-10",
+          "side": "long",
+          "entry": 21800.31,
+          "exit": 21848,
+          "why": "time",
+          "net": 0.001987,
+          "dollars": 19.87,
+          "at": 970
+        },
+        {
+          "date": "2025-01-15",
+          "side": "short",
+          "entry": 22261.64,
+          "exit": 22246.75,
+          "why": "time",
+          "net": 0.000469,
+          "dollars": 4.69,
+          "at": 961
+        },
+        {
+          "date": "2025-01-27",
+          "side": "long",
+          "entry": 22030.25,
+          "exit": 22312.56,
+          "why": "target",
+          "net": 0.012615,
+          "dollars": 126.15,
+          "at": 930
+        },
+        {
+          "date": "2025-02-25",
+          "side": "long",
+          "entry": 21989.66,
+          "exit": 21956.25,
+          "why": "time",
+          "net": -0.001719,
+          "dollars": -17.19,
+          "at": 980
+        },
+        {
+          "date": "2025-03-10",
+          "side": "long",
+          "entry": 20454.51,
+          "exit": 20531.25,
+          "why": "time",
+          "net": 0.003552,
+          "dollars": 35.52,
+          "at": 1016
+        },
+        {
+          "date": "2025-03-28",
+          "side": "long",
+          "entry": 20265.54,
+          "exit": 20297,
+          "why": "time",
+          "net": 0.001352,
+          "dollars": 13.52,
+          "at": 1024
+        },
+        {
+          "date": "2025-04-04",
+          "side": "long",
+          "entry": 18728.51,
+          "exit": 18704,
+          "why": "time",
+          "net": -0.001509,
+          "dollars": -15.09,
+          "at": 943
+        },
+        {
+          "date": "2025-04-07",
+          "side": "short",
+          "entry": 18424.04,
+          "exit": 17879.6,
+          "why": "target",
+          "net": 0.02935,
+          "dollars": 293.5,
+          "at": 972
+        },
+        {
+          "date": "2025-05-12",
+          "side": "short",
+          "entry": 21634.25,
+          "exit": 21495.25,
+          "why": "time",
+          "net": 0.006225,
+          "dollars": 62.25,
+          "at": 930
+        },
+        {
+          "date": "2025-06-16",
+          "side": "short",
+          "entry": 22677.78,
+          "exit": 22684.25,
+          "why": "time",
+          "net": -0.000485,
+          "dollars": -4.85,
+          "at": 974
+        },
+        {
+          "date": "2025-08-01",
+          "side": "long",
+          "entry": 23447.72,
+          "exit": 23396.75,
+          "why": "time",
+          "net": -0.002374,
+          "dollars": -23.74,
+          "at": 943
+        },
+        {
+          "date": "2025-08-04",
+          "side": "short",
+          "entry": 23755.66,
+          "exit": 23713,
+          "why": "time",
+          "net": 0.001596,
+          "dollars": 15.96,
+          "at": 961
+        },
+        {
+          "date": "2025-08-20",
+          "side": "long",
+          "entry": 23601.64,
+          "exit": 23712,
+          "why": "time",
+          "net": 0.004476,
+          "dollars": 44.76,
+          "at": 969
+        },
+        {
+          "date": "2025-08-22",
+          "side": "short",
+          "entry": 24060.53,
+          "exit": 24116.5,
+          "why": "time",
+          "net": -0.002526,
+          "dollars": -25.26,
+          "at": 969
+        },
+        {
+          "date": "2025-09-02",
+          "side": "long",
+          "entry": 23587.75,
+          "exit": 23609.5,
+          "why": "time",
+          "net": 0.000722,
+          "dollars": 7.22,
+          "at": 930
+        },
+        {
+          "date": "2025-09-18",
+          "side": "short",
+          "entry": 25034.06,
+          "exit": 25039.5,
+          "why": "time",
+          "net": -0.000417,
+          "dollars": -4.17,
+          "at": 981
+        },
+        {
+          "date": "2025-10-10",
+          "side": "long",
+          "entry": 25203.9,
+          "exit": 25085,
+          "why": "time",
+          "net": -0.004918,
+          "dollars": -49.18,
+          "at": 1039
+        }
+      ]
+    }
+  ],
+  "ruin": {
+    "ddBootstrap": {
+      "p50": 177.84000000000003,
+      "p95": 366.39000000000004,
+      "p99": 474.3
+    },
+    "observedDD": 201.82999999999998,
+    "accountFor20pctAtP50": 889.2000000000002,
+    "accountFor20pctAtP95": 1831.95,
+    "note": "no leverage means the account must be at least the $10,000 stake, so a 20% drawdown needs a run 10x the observed worst"
+  },
+  "profitConcentration": [
+    {
+      "k": 0,
+      "n": 44,
+      "expectancy": 12.959545454545458,
+      "total": 570.2200000000001
+    },
+    {
+      "k": 1,
+      "n": 43,
+      "expectancy": 6.435348837209309,
+      "total": 276.7200000000003
+    },
+    {
+      "k": 2,
+      "n": 42,
+      "expectancy": 0.8504761904761937,
+      "total": 35.720000000000134
+    },
+    {
+      "k": 3,
+      "n": 41,
+      "expectancy": -2.2056097560975627,
+      "total": -90.43000000000006
+    },
+    {
+      "k": 4,
+      "n": 40,
+      "expectancy": -3.817000000000001,
+      "total": -152.68000000000004
+    },
+    {
+      "k": 5,
+      "n": 39,
+      "expectancy": -5.475897435897437,
+      "total": -213.56000000000003
+    }
+  ],
+  "kelly": {
+    "full": 28.88712504135437,
+    "half": 14.443562520677185,
+    "meanReturn": 0.0012959545454545454,
+    "variance": 0.00004486270418393234,
+    "rejectedBecause": "the 95% CI on expectancy spans zero, so the numerator is not distinguishable from zero"
+  },
+  "persistence": [
+    {
+      "persistMin": 0,
+      "n": 44,
+      "winRate": 52.27272727272727,
+      "expectancy": 12.959545454545458,
+      "total": 570.2200000000001,
+      "tstat": 1.283433537082505
+    },
+    {
+      "persistMin": 1,
+      "n": 23,
+      "winRate": 52.17391304347826,
+      "expectancy": 25.529130434782612,
+      "total": 587.1700000000001,
+      "tstat": 1.4157980795884073
+    },
+    {
+      "persistMin": 2,
+      "n": 23,
+      "winRate": 52.17391304347826,
+      "expectancy": 22.758695652173916,
+      "total": 523.45,
+      "tstat": 1.2485117145903377
+    },
+    {
+      "persistMin": 5,
+      "n": 20,
+      "winRate": 50,
+      "expectancy": 27.116000000000003,
+      "total": 542.32,
+      "tstat": 1.3323068999959404
+    },
+    {
+      "persistMin": 10,
+      "n": 21,
+      "winRate": 38.095238095238095,
+      "expectancy": 11.200476190476191,
+      "total": 235.21000000000004,
+      "tstat": 0.6741191563433324
+    },
+    {
+      "persistMin": 15,
+      "n": 20,
+      "winRate": 30,
+      "expectancy": 3.1755000000000018,
+      "total": 63.51000000000003,
+      "tstat": 0.2047307624571911
     }
   ],
   "yearSplit": [

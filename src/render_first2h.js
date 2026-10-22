@@ -59,6 +59,26 @@ const gridRows = [...R.grid].sort((a, b) => b.expectancy - a.expectancy).map((r)
     <td>${r.targets}</td><td>${r.stops}</td><td>${r.timeouts}</td>`).join('');
 
 const b = R.bestCell;
+// concentration chart: total P&L after removing the k largest trades
+function concentrationChart() {
+  const C = R.profitConcentration;
+  const w = W - pad - 20, h = Hc - pad - 26;
+  const maxAbs = Math.max(...C.map((c) => Math.abs(c.total))) || 1;
+  const y = (v) => pad + h / 2 - (v / maxAbs) * (h / 2);
+  let s = `<svg viewBox="0 0 ${W} ${Hc}" class="chart">`;
+  s += `<line x1="${pad}" y1="${y(0)}" x2="${pad + w}" y2="${y(0)}" class="axis"/>`;
+  const bw = w / C.length * 0.6;
+  C.forEach((c, i) => {
+    const x = pad + (i + 0.5) * (w / C.length);
+    const top = Math.min(y(c.total), y(0)), ht = Math.abs(y(c.total) - y(0));
+    s += `<rect x="${x - bw / 2}" y="${top}" width="${bw}" height="${ht}" fill="${c.total > 0 ? '#2f9e44' : '#c92a2a'}" opacity="0.85"><title>drop ${c.k} largest: total ${money(c.total)}, expectancy ${money(c.expectancy)}, n=${c.n}</title></rect>`;
+    s += `<text x="${x}" y="${pad + h + 14}" class="ax" text-anchor="middle">${c.k}</text>`;
+  });
+  s += `<text x="${pad - 8}" y="${y(maxAbs) + 4}" class="ax" text-anchor="end">${money(maxAbs)}</text>`;
+  s += `<text x="${pad + w / 2}" y="${Hc - 6}" class="ax" text-anchor="middle">number of largest trades removed</text></svg>`;
+  return s;
+}
+
 const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <title>First 2 cash hours — study</title><style>
 :root{color-scheme:dark}
@@ -118,6 +138,30 @@ code{background:#1b2230;padding:1px 5px;border-radius:4px}
 ${R.yearSplit.map((y) => `<tr><td>${y.year}</td><td>${y.n}</td><td>${money(y.expectancy)}</td><td>${money(y.total)}</td></tr>`).join('')}
 </tbody></table>
 <p>${R.yearSplit[R.yearSplit.length - 1].n} trades in the final year carry the whole result. That is not a track record, it is a subset.</p>
+</div>
+
+<h2>Profit concentration — the number that decides it</h2>
+<div class="card">
+  ${concentrationChart()}
+  <table><thead><tr><th>drop the k largest</th><th>trades left</th><th>expectancy</th><th>total</th></tr></thead><tbody>
+  ${R.profitConcentration.map((c) => `<tr><td>${c.k}</td><td>${c.n}</td><td>${money(c.expectancy)}</td><td>${money(c.total)}</td></tr>`).join('')}
+  </tbody></table>
+  <p class="fail" style="margin-top:12px"><strong>Two trades produce 94% of the profit.</strong> Remove them and expectancy falls from +$12.96 to <strong>+$0.85</strong> over the remaining 42. Remove three and it is negative. The strategy is two observations wearing a statistics costume.</p>
+</div>
+
+<h2>Ruin analysis and Kelly</h2>
+<div class="card">
+  <p><strong>Bootstrapped drawdowns</strong> (10,000 resamples of the 44 trades): median $${R.ruin.ddBootstrap.p50.toFixed(0)}, 95th percentile $${R.ruin.ddBootstrap.p95.toFixed(0)}, 99th $${R.ruin.ddBootstrap.p99.toFixed(0)}. Observed max drawdown $${R.ruin.observedDD.toFixed(0)}.</p>
+  <p>A 20% drawdown needs an account of about <strong>$${R.ruin.accountFor20pctAtP50.toFixed(0)}</strong> at the median, <strong>$${R.ruin.accountFor20pctAtP95.toFixed(0)}</strong> at the 95th percentile. But no-leverage forces the account to be at least the $10,000 stake, so a 20% drawdown needs $2,000 of losses — <strong>${((0.2 * 10000) / R.ruin.ddBootstrap.p95).toFixed(1)}×</strong> the 95th-percentile drawdown. Ruin is not the binding risk here; the edge is.</p>
+  <p><strong>Kelly:</strong> full Kelly of <strong>${(R.kelly.full * 100).toFixed(0)}%</strong> of capital per trade. That is not a sizing recommendation, it is proof the estimator is broken on this sample: with a mean whose confidence interval spans zero and a variance flattered by 41 time-stopped micro-outcomes, the ratio explodes. Rejected — ${esc(R.kelly.rejectedBecause)}.</p>
+</div>
+
+<h2>Entry-rule sensitivity — first touch vs break persistence</h2>
+<div class="card">
+  <table><thead><tr><th>persistence required</th><th>n</th><th>win %</th><th>expectancy</th><th>t</th></tr></thead><tbody>
+  ${R.persistence.map((x) => `<tr><td>${x.persistMin} min</td><td>${x.n}</td><td>${x.expectancy === null ? '—' : x.winRate.toFixed(1)}</td><td>${x.expectancy === null ? '—' : money(x.expectancy)}</td><td>${x.expectancy === null ? '—' : x.tstat.toFixed(2)}</td></tr>`).join('')}
+  </tbody></table>
+  <p>Expectancy peaks at 1–5 minutes of persistence (+$25 to +$27) then decays to +$3 by 15 minutes — the shape of a short-lived effect. But the filter halves the sample to ~20 trades, so the peak is one fewer observation away from zero, not evidence. <strong>No variant reaches t = 1.5.</strong></p>
 </div>
 
 <h2>Every cell</h2>
