@@ -1,0 +1,1520 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Range indicator - backtest report</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; padding:28px 20px 60px; background:#0e1117; color:#d7dde8;
+         font:14px/1.55 -apple-system,Segoe UI,Roboto,sans-serif; }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  h2 { font-size:15px; margin:34px 0 10px; color:#8fb4ff; letter-spacing:.02em; }
+  .sub { color:#7d8799; margin:0 0 22px; font-size:13px; }
+  .card { background:#151a23; border:1px solid #222a37; border-radius:10px; padding:16px 18px; margin:12px 0; }
+  .chart { width:100%; height:auto; display:block; }
+  .grid { stroke:#232b38; stroke-width:1; }
+  .axis { stroke:#3a4454; stroke-width:1; }
+  .zero { stroke:#5a6577; stroke-width:1; stroke-dasharray:4 3; }
+  .ax { fill:#7d8799; font-size:10px; }
+  .barPred { fill:#3b5bdb; opacity:.85; }
+  .barReal { fill:#37b24d; opacity:.85; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  th,td { padding:5px 7px; text-align:right; border-bottom:1px solid #1e2430; }
+  th { color:#7d8799; font-weight:600; text-align:right; }
+  th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align:left; }
+  tr.pos td:nth-child(7) { color:#69db7c; }
+  tr.neg td:nth-child(7) { color:#ff8787; }
+  .legend span { display:inline-block; margin-right:14px; font-size:12px; color:#9aa4b5; }
+  .sw { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px; vertical-align:middle; }
+  code { background:#1b2230; padding:1px 5px; border-radius:4px; font-size:12px; }
+  .warn { border-left:3px solid #f5b64c; padding-left:12px; color:#c8c2b4; font-size:13px; }
+</style></head><body><div class="wrap">
+
+<h1>Range indicator &mdash; what was measured, on what, and why</h1>
+<p class="sub">generated 2026-10-22T15:22:38.927Z &middot; 765 sessions &middot; 102 band touches &middot; $10000 per trade &middot; 2 bp round-trip cost</p>
+
+<h2>Three separate things - do not mix them up</h2>
+<div class="card">
+  <p><strong>1. The daily model.</strong> predicts the session high/low band from prior daily bars. Measured by MAE and band coverage (see docs/02-method). It is a trading strategy.</p>
+  <p><strong>2. The intraday nowcast.</strong> given the running high/low, P(new high) and P(new low). Measured by calibration below. It is a trading strategy.</p>
+  <p><strong>3. A trading rule.</strong> entry at a band touch, exit by target/stop/close. Measured by win rate, expectancy, t-stat. It is the indicator.</p>
+  <p class="warn" style="margin-top:14px"><strong>Every win rate on this page belongs to object 3.</strong> It is a property of a rule someone wrote, using the indicator's levels as entry prices. The indicator itself has no win rate.</p>
+</div>
+
+<h2>Definitions used</h2>
+<div class="card">
+  <p><strong>H</strong> = H = half the band width = (upper - lower band)/2. Target and stop are quoted as multiples of H so sessions of different volatility are comparable.</p>
+  <p><strong>Win</strong> = net P&amp;L per trade &gt; 0 after the round-trip cost. A 90% win rate with a large average loss can still lose money; that is why expectancy and the stop count are shown beside every win rate.</p>
+  <p><strong>Hours traded</strong> = the window in which the entry may occur. The full session runs 18:00&ndash;17:00 ET; the cash window 09:30&ndash;16:00 ET.</p>
+  <p><strong>Alignment</strong> = daily series is back-adjusted; bands rescaled per session by intradayOpen/dailyOpen.</p>
+</div>
+
+<h2>Object 2 &mdash; nowcast calibration: predicted vs realised</h2>
+<div class="card">
+  <svg viewBox="0 0 760 320" class="chart"><line x1="46" y1="290" x2="740" y2="290" class="grid"/><text x="38" y="294" class="ax" text-anchor="end">0%</text><line x1="46" y1="229" x2="740" y2="229" class="grid"/><text x="38" y="233" class="ax" text-anchor="end">25%</text><line x1="46" y1="168" x2="740" y2="168" class="grid"/><text x="38" y="172" class="ax" text-anchor="end">50%</text><line x1="46" y1="107" x2="740" y2="107" class="grid"/><text x="38" y="111" class="ax" text-anchor="end">75%</text><line x1="46" y1="46" x2="740" y2="46" class="grid"/><text x="38" y="50" class="ax" text-anchor="end">100%</text><rect x="58.88" y="284.8640588657705" width="20.82" height="5.135941134229483" class="barPred"/><rect x="81.7" y="280.7030297715614" width="20.82" height="9.296970228438624" class="barReal"/><text x="80.7" y="306" class="ax" text-anchor="middle">1</text><rect x="128.28000000000003" y="253.612061020437" width="20.82" height="36.38793897956299" class="barPred"/><rect x="151.10000000000002" y="247.30835998172682" width="20.82" height="42.691640018273176" class="barReal"/><text x="150.10000000000002" y="306" class="ax" text-anchor="middle">2</text><rect x="197.68" y="228.69505629373197" width="20.82" height="61.304943706268034" class="barPred"/><rect x="220.5" y="224.390158172232" width="20.82" height="65.60984182776801" class="barReal"/><text x="219.5" y="306" class="ax" text-anchor="middle">3</text><rect x="267.08000000000004" y="204.29642138958883" width="20.82" height="85.70357861041117" class="barPred"/><rect x="289.90000000000003" y="201.0066910743593" width="20.82" height="88.99330892564069" class="barReal"/><text x="288.90000000000003" y="306" class="ax" text-anchor="middle">4</text><rect x="336.48" y="179.64867306419328" width="20.82" height="110.35132693580672" class="barPred"/><rect x="359.3" y="182.31257533145842" width="20.82" height="107.68742466854158" class="barReal"/><text x="358.3" y="306" class="ax" text-anchor="middle">5</text><rect x="405.88000000000005" y="155.28690176668255" width="20.82" height="134.71309823331745" class="barPred"/><rect x="428.70000000000005" y="161.34753100865902" width="20.82" height="128.65246899134098" class="barReal"/><text x="427.70000000000005" y="306" class="ax" text-anchor="middle">6</text><rect x="475.28000000000003" y="130.70761737379297" width="20.82" height="159.29238262620703" class="barPred"/><rect x="498.1" y="134.54266092422301" width="20.82" height="155.45733907577699" class="barReal"/><text x="497.1" y="306" class="ax" text-anchor="middle">7</text><rect x="544.68" y="106.16923796297124" width="20.82" height="183.83076203702876" class="barPred"/><rect x="567.5" y="105.26078226648463" width="20.82" height="184.73921773351537" class="barReal"/><text x="566.5" y="306" class="ax" text-anchor="middle">8</text><rect x="614.08" y="81.50460635722061" width="20.82" height="208.4953936427794" class="barPred"/><rect x="636.9000000000001" y="80.40778578889709" width="20.82" height="209.5922142111029" class="barReal"/><text x="635.9000000000001" y="306" class="ax" text-anchor="middle">9</text><rect x="683.48" y="58.34777576439723" width="20.82" height="231.65222423560277" class="barPred"/><rect x="706.3000000000001" y="58.30699869677011" width="20.82" height="231.6930013032299" class="barReal"/><text x="705.3000000000001" y="306" class="ax" text-anchor="middle">10</text><line x1="46" y1="290" x2="740" y2="290" class="axis"/><text x="393" y="314" class="ax" text-anchor="middle">predicted decile (1 = model says ~0-10% chance the high extends)</text></svg>
+  <p class="legend"><span><span class="sw" style="background:#3b5bdb"></span>predicted</span><span><span class="sw" style="background:#37b24d"></span>realised</span>
+  <span>overall 65.8% predicted vs 66.0% realised, n=205015</span></p>
+  <p>Each bar pair asks: when the model said there was a <em>p</em> chance the session high would extend, how often did it actually extend? Bars of equal height mean the model is honest. The largest disagreement is 2.6 points.</p>
+</div>
+
+<h2>Object 3 &mdash; every rule: win rate against actual expectancy</h2>
+<div class="card">
+  <svg viewBox="0 0 760 320" class="chart"><line x1="46" y1="46" x2="46" y2="290" class="grid"/><text x="46" y="306" class="ax" text-anchor="middle">0%</text><line x1="219.5" y1="46" x2="219.5" y2="290" class="grid"/><text x="219.5" y="306" class="ax" text-anchor="middle">25%</text><line x1="393" y1="46" x2="393" y2="290" class="grid"/><text x="393" y="306" class="ax" text-anchor="middle">50%</text><line x1="566.5" y1="46" x2="566.5" y2="290" class="grid"/><text x="566.5" y="306" class="ax" text-anchor="middle">75%</text><line x1="740" y1="46" x2="740" y2="290" class="grid"/><text x="740" y="306" class="ax" text-anchor="middle">100%</text><line x1="46" y1="168" x2="740" y2="168" class="zero"/><text x="38" y="172" class="ax" text-anchor="end">$0</text><text x="38" y="50" class="ax" text-anchor="end">+$20</text><text x="38" y="294" class="ax" text-anchor="end">-$20</text><circle cx="495.0588235294117" cy="189.75263102726865" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.1H / stop 0.3H
+n=102  win 64.7%  exp $-3.6
+t=-1.10  stops=23</title></circle><circle cx="542.6862745098039" cy="179.6042205788582" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.1H / stop 0.5H
+n=102  win 71.6%  exp $-1.9
+t=-0.51  stops=11</title></circle><circle cx="549.4901960784314" cy="176.6267005790301" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.1H / stop 1H
+n=102  win 72.5%  exp $-1.4
+t=-0.37  stops=2</title></circle><circle cx="549.4901960784314" cy="185.39722637565353" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.1H / stop 1.5H
+n=102  win 72.5%  exp $-2.9
+t=-0.63  stops=2</title></circle><circle cx="549.4901960784314" cy="178.16875492844173" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.1H / stop 2H
+n=102  win 72.5%  exp $-1.7
+t=-0.39  stops=1</title></circle><circle cx="549.4901960784314" cy="180.01208350611614" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.1H / stop 3H
+n=102  win 72.5%  exp $-2.0
+t=-0.44  stops=0</title></circle><circle cx="386.19607843137254" cy="229.91523116429263" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.2H / stop 0.3H
+n=102  win 49.0%  exp $-10.2
+t=-2.35  stops=33</title></circle><circle cx="440.62745098039215" cy="225.57315370872936" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.2H / stop 0.5H
+n=102  win 56.9%  exp $-9.4
+t=-1.72  stops=15</title></circle><circle cx="454.2352941176471" cy="225.14250556366596" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.2H / stop 1H
+n=102  win 58.8%  exp $-9.4
+t=-1.33  stops=4</title></circle><circle cx="454.2352941176471" cy="245.90434667690727" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.2H / stop 1.5H
+n=102  win 58.8%  exp $-12.8
+t=-1.51  stops=3</title></circle><circle cx="454.2352941176471" cy="238.86332742176174" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.2H / stop 2H
+n=102  win 58.8%  exp $-11.6
+t=-1.39  stops=1</title></circle><circle cx="454.2352941176471" cy="240.70665599943615" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.2H / stop 3H
+n=102  win 58.8%  exp $-11.9
+t=-1.41  stops=0</title></circle><circle cx="338.5686274509804" cy="232.7469905951886" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.3H / stop 0.3H
+n=102  win 42.2%  exp $-10.6
+t=-2.22  stops=37</title></circle><circle cx="379.3921568627451" cy="238.09632483907748" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.3H / stop 0.5H
+n=102  win 48.0%  exp $-11.5
+t=-1.92  stops=18</title></circle><circle cx="393" cy="233.62027432795188" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.3H / stop 1H
+n=102  win 50.0%  exp $-10.8
+t=-1.43  stops=5</title></circle><circle cx="393" cy="254.11334750748983" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.3H / stop 1.5H
+n=102  win 50.0%  exp $-14.1
+t=-1.60  stops=3</title></circle><circle cx="393" cy="247.07232825234425" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.3H / stop 2H
+n=102  win 50.0%  exp $-13.0
+t=-1.48  stops=1</title></circle><circle cx="393" cy="248.91565683001866" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.3H / stop 3H
+n=102  win 50.0%  exp $-13.3
+t=-1.50  stops=0</title></circle><circle cx="324.9607843137255" cy="219.5675288212617" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.5H / stop 0.3H
+n=102  win 40.2%  exp $-8.5
+t=-1.57  stops=37</title></circle><circle cx="358.98039215686276" cy="237.0800636713912" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.5H / stop 0.5H
+n=102  win 45.1%  exp $-11.3
+t=-1.71  stops=19</title></circle><circle cx="372.5882352941176" cy="234.26273799586926" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.5H / stop 1H
+n=102  win 47.1%  exp $-10.9
+t=-1.25  stops=6</title></circle><circle cx="372.5882352941176" cy="252.54250925942662" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.5H / stop 1.5H
+n=102  win 47.1%  exp $-13.9
+t=-1.42  stops=3</title></circle><circle cx="372.5882352941176" cy="245.5014900042811" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.5H / stop 2H
+n=102  win 47.1%  exp $-12.7
+t=-1.31  stops=1</title></circle><circle cx="372.5882352941176" cy="247.3448185819555" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.5H / stop 3H
+n=102  win 47.1%  exp $-13.0
+t=-1.33  stops=0</title></circle><circle cx="318.15686274509807" cy="234.92745785825036" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.8H / stop 0.3H
+n=102  win 39.2%  exp $-11.0
+t=-2.10  stops=38</title></circle><circle cx="358.98039215686276" cy="244.45360835148114" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.8H / stop 0.5H
+n=102  win 45.1%  exp $-12.5
+t=-1.91  stops=19</title></circle><circle cx="372.5882352941176" cy="229.609597906873" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.8H / stop 1H
+n=102  win 47.1%  exp $-10.1
+t=-1.10  stops=6</title></circle><circle cx="372.5882352941176" cy="247.88936917043037" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.8H / stop 1.5H
+n=102  win 47.1%  exp $-13.1
+t=-1.29  stops=3</title></circle><circle cx="372.5882352941176" cy="240.8483499152848" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.8H / stop 2H
+n=102  win 47.1%  exp $-11.9
+t=-1.18  stops=1</title></circle><circle cx="372.5882352941176" cy="242.69167849295923" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 0.8H / stop 3H
+n=102  win 47.1%  exp $-12.2
+t=-1.20  stops=0</title></circle><circle cx="318.15686274509807" cy="241.0141430684966" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 1H / stop 0.3H
+n=102  win 39.2%  exp $-12.0
+t=-2.39  stops=38</title></circle><circle cx="358.98039215686276" cy="248.97087058653392" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 1H / stop 0.5H
+n=102  win 45.1%  exp $-13.3
+t=-2.06  stops=19</title></circle><circle cx="372.5882352941176" cy="252.0684171951129" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 1H / stop 1H
+n=102  win 47.1%  exp $-13.8
+t=-1.63  stops=6</title></circle><circle cx="372.5882352941176" cy="270.3481884586703" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 1H / stop 1.5H
+n=102  win 47.1%  exp $-16.8
+t=-1.76  stops=3</title></circle><circle cx="372.5882352941176" cy="263.3071692035247" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 1H / stop 2H
+n=102  win 47.1%  exp $-15.6
+t=-1.66  stops=1</title></circle><circle cx="372.5882352941176" cy="265.1504977811992" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+fade target 1H / stop 3H
+n=102  win 47.1%  exp $-15.9
+t=-1.67  stops=0</title></circle><circle cx="535.8823529411766" cy="165.93435393533952" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.1H / stop 0.3H
+n=102  win 70.6%  exp $0.3
+t=0.12  stops=16</title></circle><circle cx="549.4901960784314" cy="167.8042167668319" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.1H / stop 0.5H
+n=102  win 72.5%  exp $0.0
+t=0.01  stops=8</title></circle><circle cx="549.4901960784314" cy="156.17713477307944" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.1H / stop 1H
+n=102  win 72.5%  exp $1.9
+t=0.71  stops=0</title></circle><circle cx="549.4901960784314" cy="156.17713477307944" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.1H / stop 1.5H
+n=102  win 72.5%  exp $1.9
+t=0.71  stops=0</title></circle><circle cx="549.4901960784314" cy="156.17713477307944" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.1H / stop 2H
+n=102  win 72.5%  exp $1.9
+t=0.71  stops=0</title></circle><circle cx="549.4901960784314" cy="156.17713477307944" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.1H / stop 3H
+n=102  win 72.5%  exp $1.9
+t=0.71  stops=0</title></circle><circle cx="454.2352941176471" cy="147.47450669939764" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.2H / stop 0.3H
+n=102  win 58.8%  exp $3.4
+t=0.87  stops=22</title></circle><circle cx="467.84313725490193" cy="155.42687565741906" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.2H / stop 0.5H
+n=102  win 60.8%  exp $2.1
+t=0.46  stops=11</title></circle><circle cx="467.84313725490193" cy="141.1499248566111" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.2H / stop 1H
+n=102  win 60.8%  exp $4.4
+t=1.08  stops=0</title></circle><circle cx="467.84313725490193" cy="141.1499248566111" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.2H / stop 1.5H
+n=102  win 60.8%  exp $4.4
+t=1.08  stops=0</title></circle><circle cx="467.84313725490193" cy="141.1499248566111" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.2H / stop 2H
+n=102  win 60.8%  exp $4.4
+t=1.08  stops=0</title></circle><circle cx="467.84313725490193" cy="141.1499248566111" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.2H / stop 3H
+n=102  win 60.8%  exp $4.4
+t=1.08  stops=0</title></circle><circle cx="420.2156862745098" cy="127.65300940481137" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.3H / stop 0.3H
+n=102  win 53.9%  exp $6.6
+t=1.38  stops=26</title></circle><circle cx="433.8235294117647" cy="140.83247117873833" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.3H / stop 0.5H
+n=102  win 55.9%  exp $4.5
+t=0.83  stops=14</title></circle><circle cx="440.62745098039215" cy="119.38585693150338" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.3H / stop 1H
+n=102  win 56.9%  exp $8.0
+t=1.59  stops=0</title></circle><circle cx="440.62745098039215" cy="119.38585693150338" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.3H / stop 1.5H
+n=102  win 56.9%  exp $8.0
+t=1.59  stops=0</title></circle><circle cx="440.62745098039215" cy="119.38585693150338" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.3H / stop 2H
+n=102  win 56.9%  exp $8.0
+t=1.59  stops=0</title></circle><circle cx="440.62745098039215" cy="119.38585693150338" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.3H / stop 3H
+n=102  win 56.9%  exp $8.0
+t=1.59  stops=0</title></circle><circle cx="379.3921568627451" cy="122.3036751609225" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.5H / stop 0.3H
+n=102  win 48.0%  exp $7.5
+t=1.25  stops=29</title></circle><circle cx="399.8039215686274" cy="123.3199363286088" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.5H / stop 0.5H
+n=102  win 51.0%  exp $7.3
+t=1.11  stops=16</title></circle><circle cx="399.8039215686274" cy="111.42912941346611" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.5H / stop 1H
+n=102  win 51.0%  exp $9.3
+t=1.44  stops=1</title></circle><circle cx="399.8039215686274" cy="110.53489955552544" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.5H / stop 1.5H
+n=102  win 51.0%  exp $9.4
+t=1.47  stops=0</title></circle><circle cx="399.8039215686274" cy="110.53489955552544" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.5H / stop 2H
+n=102  win 51.0%  exp $9.4
+t=1.47  stops=0</title></circle><circle cx="399.8039215686274" cy="110.53489955552544" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.5H / stop 3H
+n=102  win 51.0%  exp $9.4
+t=1.47  stops=0</title></circle><circle cx="372.5882352941176" cy="110.94973905481473" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.8H / stop 0.3H
+n=102  win 47.1%  exp $9.4
+t=1.29  stops=30</title></circle><circle cx="393" cy="109.75982621893655" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.8H / stop 0.5H
+n=102  win 50.0%  exp $9.5
+t=1.18  stops=17</title></circle><circle cx="393" cy="100.18223779642202" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.8H / stop 1H
+n=102  win 50.0%  exp $11.1
+t=1.38  stops=1</title></circle><circle cx="393" cy="99.28800793848131" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.8H / stop 1.5H
+n=102  win 50.0%  exp $11.3
+t=1.40  stops=0</title></circle><circle cx="393" cy="99.28800793848131" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.8H / stop 2H
+n=102  win 50.0%  exp $11.3
+t=1.40  stops=0</title></circle><circle cx="393" cy="99.28800793848131" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 0.8H / stop 3H
+n=102  win 50.0%  exp $11.3
+t=1.40  stops=0</title></circle><circle cx="365.78431372549016" cy="126.77972567204813" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 1H / stop 0.3H
+n=102  win 46.1%  exp $6.8
+t=0.90  stops=31</title></circle><circle cx="386.19607843137254" cy="126.13726200413075" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 1H / stop 0.5H
+n=102  win 49.0%  exp $6.9
+t=0.79  stops=18</title></circle><circle cx="386.19607843137254" cy="108.33158280488712" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 1H / stop 1H
+n=102  win 49.0%  exp $9.8
+t=1.16  stops=1</title></circle><circle cx="386.19607843137254" cy="107.43735294694642" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 1H / stop 1.5H
+n=102  win 49.0%  exp $9.9
+t=1.18  stops=0</title></circle><circle cx="386.19607843137254" cy="107.43735294694642" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 1H / stop 2H
+n=102  win 49.0%  exp $9.9
+t=1.18  stops=0</title></circle><circle cx="386.19607843137254" cy="107.43735294694642" r="5.049752469181039" fill="#4c8bf5" opacity="0.55" stroke="#4c8bf5" stroke-width="1"><title>full 23h session (18:00-17:00 ET)
+momentum target 1H / stop 3H
+n=102  win 49.0%  exp $9.9
+t=1.18  stops=0</title></circle><circle cx="508.6666666666666" cy="170.90946169322956" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.1H / stop 0.3H
+n=84  win 66.7%  exp $-0.5
+t=-0.15  stops=16</title></circle><circle cx="549.9761904761905" cy="159.2546726502369" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.1H / stop 0.5H
+n=84  win 72.6%  exp $1.4
+t=0.42  stops=7</title></circle><circle cx="549.9761904761905" cy="166.46333279920424" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.1H / stop 1H
+n=84  win 72.6%  exp $0.3
+t=0.07  stops=1</title></circle><circle cx="549.9761904761905" cy="171.3738266673169" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.1H / stop 1.5H
+n=84  win 72.6%  exp $-0.6
+t=-0.13  stops=1</title></circle><circle cx="549.9761904761905" cy="176.28432053542974" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.1H / stop 2H
+n=84  win 72.6%  exp $-1.4
+t=-0.29  stops=1</title></circle><circle cx="549.9761904761905" cy="178.5226480940344" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.1H / stop 3H
+n=84  win 72.6%  exp $-1.7
+t=-0.34  stops=0</title></circle><circle cx="393" cy="217.6755611701175" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.2H / stop 0.3H
+n=84  win 50.0%  exp $-8.1
+t=-1.77  stops=25</title></circle><circle cx="434.3095238095238" cy="224.24839059533988" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.2H / stop 0.5H
+n=84  win 56.0%  exp $-9.2
+t=-1.57  stops=11</title></circle><circle cx="442.57142857142856" cy="236.7352341283911" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.2H / stop 1H
+n=84  win 57.1%  exp $-11.3
+t=-1.41  stops=3</title></circle><circle cx="442.57142857142856" cy="256.20661088096847" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.2H / stop 1.5H
+n=84  win 57.1%  exp $-14.5
+t=-1.51  stops=2</title></circle><circle cx="442.57142857142856" cy="261.3447252680188" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.2H / stop 2H
+n=84  win 57.1%  exp $-15.3
+t=-1.56  stops=1</title></circle><circle cx="442.57142857142856" cy="263.5830528266235" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.2H / stop 3H
+n=84  win 57.1%  exp $-15.7
+t=-1.58  stops=0</title></circle><circle cx="343.4285714285714" cy="222.32801318240956" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.3H / stop 0.3H
+n=84  win 42.9%  exp $-8.9
+t=-1.72  stops=29</title></circle><circle cx="376.4761904761904" cy="236.53817986741805" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.3H / stop 0.5H
+n=84  win 47.6%  exp $-11.2
+t=-1.76  stops=14</title></circle><circle cx="384.73809523809524" cy="246.29830237354898" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.3H / stop 1H
+n=84  win 48.8%  exp $-12.8
+t=-1.52  stops=4</title></circle><circle cx="384.73809523809524" cy="265.44331806377215" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.3H / stop 1.5H
+n=84  win 48.8%  exp $-16.0
+t=-1.61  stops=2</title></circle><circle cx="384.73809523809524" cy="270.5814324508225" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.3H / stop 2H
+n=84  win 48.8%  exp $-16.8
+t=-1.66  stops=1</title></circle><circle cx="384.73809523809524" cy="272.81976000942717" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.3H / stop 3H
+n=84  win 48.8%  exp $-17.2
+t=-1.67  stops=0</title></circle><circle cx="326.9047619047619" cy="216.63883367046793" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.5H / stop 0.3H
+n=84  win 40.5%  exp $-8.0
+t=-1.40  stops=29</title></circle><circle cx="359.95238095238096" cy="228.9432724570272" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.5H / stop 0.5H
+n=84  win 45.2%  exp $-10.0
+t=-1.46  stops=14</title></circle><circle cx="368.2142857142857" cy="233.33861384239898" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.5H / stop 1H
+n=84  win 46.4%  exp $-10.7
+t=-1.19  stops=4</title></circle><circle cx="368.2142857142857" cy="252.48362953262216" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.5H / stop 1.5H
+n=84  win 46.4%  exp $-13.8
+t=-1.33  stops=2</title></circle><circle cx="368.2142857142857" cy="257.62174391967255" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.5H / stop 2H
+n=84  win 46.4%  exp $-14.7
+t=-1.38  stops=1</title></circle><circle cx="368.2142857142857" cy="259.86007147827723" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.5H / stop 3H
+n=84  win 46.4%  exp $-15.1
+t=-1.40  stops=0</title></circle><circle cx="326.9047619047619" cy="229.39273646516386" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.8H / stop 0.3H
+n=84  win 40.5%  exp $-10.1
+t=-1.86  stops=29</title></circle><circle cx="359.95238095238096" cy="238.8385834040496" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.8H / stop 0.5H
+n=84  win 45.2%  exp $-11.6
+t=-1.74  stops=14</title></circle><circle cx="368.2142857142857" cy="235.1867531082825" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.8H / stop 1H
+n=84  win 46.4%  exp $-11.0
+t=-1.18  stops=4</title></circle><circle cx="368.2142857142857" cy="254.3317687985057" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.8H / stop 1.5H
+n=84  win 46.4%  exp $-14.2
+t=-1.33  stops=2</title></circle><circle cx="368.2142857142857" cy="259.46988318555606" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.8H / stop 2H
+n=84  win 46.4%  exp $-15.0
+t=-1.38  stops=1</title></circle><circle cx="368.2142857142857" cy="261.70821074416074" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 0.8H / stop 3H
+n=84  win 46.4%  exp $-15.4
+t=-1.40  stops=0</title></circle><circle cx="326.9047619047619" cy="230.84352139538595" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 1H / stop 0.3H
+n=84  win 40.5%  exp $-10.3
+t=-1.92  stops=29</title></circle><circle cx="359.95238095238096" cy="238.38364043582249" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 1H / stop 0.5H
+n=84  win 45.2%  exp $-11.5
+t=-1.72  stops=14</title></circle><circle cx="368.2142857142857" cy="252.77023490722246" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 1H / stop 1H
+n=84  win 46.4%  exp $-13.9
+t=-1.61  stops=4</title></circle><circle cx="368.2142857142857" cy="271.91525059744566" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 1H / stop 1.5H
+n=84  win 46.4%  exp $-17.0
+t=-1.69  stops=2</title></circle><circle cx="368.2142857142857" cy="277.053364984496" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 1H / stop 2H
+n=84  win 46.4%  exp $-17.9
+t=-1.74  stops=1</title></circle><circle cx="368.2142857142857" cy="279.2916925431007" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+fade target 1H / stop 3H
+n=84  win 46.4%  exp $-18.2
+t=-1.76  stops=0</title></circle><circle cx="533.4523809523808" cy="165.8179053437778" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.1H / stop 0.3H
+n=84  win 70.2%  exp $0.4
+t=0.12  stops=13</title></circle><circle cx="549.9761904761905" cy="159.72968498490712" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.1H / stop 0.5H
+n=84  win 72.6%  exp $1.4
+t=0.43  stops=5</title></circle><circle cx="549.9761904761905" cy="149.62597675921344" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.1H / stop 1H
+n=84  win 72.6%  exp $3.0
+t=1.12  stops=0</title></circle><circle cx="549.9761904761905" cy="149.62597675921344" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.1H / stop 1.5H
+n=84  win 72.6%  exp $3.0
+t=1.12  stops=0</title></circle><circle cx="549.9761904761905" cy="149.62597675921344" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.1H / stop 2H
+n=84  win 72.6%  exp $3.0
+t=1.12  stops=0</title></circle><circle cx="549.9761904761905" cy="149.62597675921344" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.1H / stop 3H
+n=84  win 72.6%  exp $3.0
+t=1.12  stops=0</title></circle><circle cx="442.57142857142856" cy="154.32530438272693" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.2H / stop 0.3H
+n=84  win 57.1%  exp $2.2
+t=0.53  stops=19</title></circle><circle cx="459.0952380952381" cy="155.62298432035584" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.2H / stop 0.5H
+n=84  win 59.5%  exp $2.0
+t=0.43  stops=8</title></circle><circle cx="459.0952380952381" cy="142.3015782575233" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.2H / stop 1H
+n=84  win 59.5%  exp $4.2
+t=0.97  stops=0</title></circle><circle cx="459.0952380952381" cy="142.3015782575233" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.2H / stop 1.5H
+n=84  win 59.5%  exp $4.2
+t=0.97  stops=0</title></circle><circle cx="459.0952380952381" cy="142.3015782575233" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.2H / stop 2H
+n=84  win 59.5%  exp $4.2
+t=0.97  stops=0</title></circle><circle cx="459.0952380952381" cy="142.3015782575233" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.2H / stop 3H
+n=84  win 59.5%  exp $4.2
+t=0.97  stops=0</title></circle><circle cx="409.5238095238095" cy="138.0719868175904" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.3H / stop 0.3H
+n=84  win 52.4%  exp $4.9
+t=0.95  stops=22</title></circle><circle cx="426.0476190476191" cy="143.7611663295321" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.3H / stop 0.5H
+n=84  win 54.8%  exp $4.0
+t=0.70  stops=10</title></circle><circle cx="426.0476190476191" cy="129.55647860461403" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.3H / stop 1H
+n=84  win 54.8%  exp $6.3
+t=1.18  stops=0</title></circle><circle cx="426.0476190476191" cy="129.55647860461403" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.3H / stop 1.5H
+n=84  win 54.8%  exp $6.3
+t=1.18  stops=0</title></circle><circle cx="426.0476190476191" cy="129.55647860461403" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.3H / stop 2H
+n=84  win 54.8%  exp $6.3
+t=1.18  stops=0</title></circle><circle cx="426.0476190476191" cy="129.55647860461403" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.3H / stop 3H
+n=84  win 54.8%  exp $6.3
+t=1.18  stops=0</title></circle><circle cx="376.4761904761904" cy="123.86182013258193" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.5H / stop 0.3H
+n=84  win 47.6%  exp $7.2
+t=1.13  stops=23</title></circle><circle cx="393" cy="131.45672754297277" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.5H / stop 0.5H
+n=84  win 50.0%  exp $6.0
+t=0.87  stops=11</title></circle><circle cx="393" cy="122.01635956417752" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.5H / stop 1H
+n=84  win 50.0%  exp $7.5
+t=1.12  stops=1</title></circle><circle cx="393" cy="120.93050902239236" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.5H / stop 1.5H
+n=84  win 50.0%  exp $7.7
+t=1.16  stops=0</title></circle><circle cx="393" cy="120.93050902239236" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.5H / stop 2H
+n=84  win 50.0%  exp $7.7
+t=1.16  stops=0</title></circle><circle cx="393" cy="120.93050902239236" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.5H / stop 3H
+n=84  win 50.0%  exp $7.7
+t=1.16  stops=0</title></circle><circle cx="376.4761904761904" cy="92.58379889440997" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.8H / stop 0.3H
+n=84  win 47.6%  exp $12.4
+t=1.52  stops=23</title></circle><circle cx="393" cy="100.17870630480078" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.8H / stop 0.5H
+n=84  win 50.0%  exp $11.1
+t=1.30  stops=11</title></circle><circle cx="393" cy="90.73833832600556" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.8H / stop 1H
+n=84  win 50.0%  exp $12.7
+t=1.51  stops=1</title></circle><circle cx="393" cy="89.6524877842204" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.8H / stop 1.5H
+n=84  win 50.0%  exp $12.8
+t=1.54  stops=0</title></circle><circle cx="393" cy="89.6524877842204" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.8H / stop 2H
+n=84  win 50.0%  exp $12.8
+t=1.54  stops=0</title></circle><circle cx="393" cy="89.6524877842204" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 0.8H / stop 3H
+n=84  win 50.0%  exp $12.8
+t=1.54  stops=0</title></circle><circle cx="368.2142857142857" cy="114.101697626451" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 1H / stop 0.3H
+n=84  win 46.4%  exp $8.8
+t=1.05  stops=24</title></circle><circle cx="384.73809523809524" cy="127.06138615760102" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 1H / stop 0.5H
+n=84  win 48.8%  exp $6.7
+t=0.74  stops=12</title></circle><circle cx="384.73809523809524" cy="107.62976509277757" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 1H / stop 1H
+n=84  win 48.8%  exp $9.9
+t=1.15  stops=1</title></circle><circle cx="384.73809523809524" cy="106.54391455099244" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 1H / stop 1.5H
+n=84  win 48.8%  exp $10.1
+t=1.17  stops=0</title></circle><circle cx="384.73809523809524" cy="106.54391455099244" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 1H / stop 2H
+n=84  win 48.8%  exp $10.1
+t=1.17  stops=0</title></circle><circle cx="384.73809523809524" cy="106.54391455099244" r="4.58257569495584" fill="#f5b64c" opacity="0.55" stroke="#f5b64c" stroke-width="1"><title>cash hours only (09:30-16:00 ET)
+momentum target 1H / stop 3H
+n=84  win 48.8%  exp $10.1
+t=1.17  stops=0</title></circle><circle cx="581.3714285714286" cy="158.89894654322745" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.1H / stop 0.3H
+n=35  win 77.1%  exp $1.5
+t=0.32  stops=8</title></circle><circle cx="640.8571428571428" cy="157.0227427039814" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.1H / stop 0.5H
+n=35  win 85.7%  exp $1.8
+t=0.31  stops=5</title></circle><circle cx="640.8571428571428" cy="169.80943056982295" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.1H / stop 1H
+n=35  win 85.7%  exp $-0.3
+t=-0.04  stops=1</title></circle><circle cx="640.8571428571428" cy="181.59461585329345" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.1H / stop 1.5H
+n=35  win 85.7%  exp $-2.2
+t=-0.27  stops=1</title></circle><circle cx="640.8571428571428" cy="193.37980113676417" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.1H / stop 2H
+n=35  win 85.7%  exp $-4.2
+t=-0.43  stops=1</title></circle><circle cx="640.8571428571428" cy="198.75178727741536" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.1H / stop 3H
+n=35  win 85.7%  exp $-5.0
+t=-0.48  stops=0</title></circle><circle cx="422.74285714285713" cy="212.8656085612982" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.2H / stop 0.3H
+n=35  win 54.3%  exp $-7.4
+t=-0.98  stops=14</title></circle><circle cx="482.2285714285714" cy="232.5887601760296" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.2H / stop 0.5H
+n=35  win 62.9%  exp $-10.6
+t=-1.07  stops=7</title></circle><circle cx="502.05714285714276" cy="200.02086049439743" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.2H / stop 1H
+n=35  win 65.7%  exp $-5.2
+t=-0.56  stops=1</title></circle><circle cx="502.05714285714276" cy="211.8060457778679" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.2H / stop 1.5H
+n=35  win 65.7%  exp $-7.2
+t=-0.69  stops=1</title></circle><circle cx="502.05714285714276" cy="223.59123106133865" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.2H / stop 2H
+n=35  win 65.7%  exp $-9.1
+t=-0.79  stops=1</title></circle><circle cx="502.05714285714276" cy="228.96321720198983" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.2H / stop 3H
+n=35  win 65.7%  exp $-10.0
+t=-0.82  stops=0</title></circle><circle cx="323.6" cy="241.0710377748464" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.3H / stop 0.3H
+n=35  win 40.0%  exp $-12.0
+t=-1.40  stops=17</title></circle><circle cx="363.25714285714287" cy="274.9083935821503" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.3H / stop 0.5H
+n=35  win 45.7%  exp $-17.5
+t=-1.64  stops=9</title></circle><circle cx="383.0857142857143" cy="238.39524930341835" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.3H / stop 1H
+n=35  win 48.6%  exp $-11.5
+t=-1.07  stops=2</title></circle><circle cx="383.0857142857143" cy="249.39716803723894" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.3H / stop 1.5H
+n=35  win 48.6%  exp $-13.3
+t=-1.15  stops=1</title></circle><circle cx="383.0857142857143" cy="261.1823533207097" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.3H / stop 2H
+n=35  win 48.6%  exp $-15.3
+t=-1.21  stops=1</title></circle><circle cx="383.0857142857143" cy="266.5543394613609" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.3H / stop 3H
+n=35  win 48.6%  exp $-16.2
+t=-1.22  stops=0</title></circle><circle cx="323.6" cy="192.88216540179803" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.5H / stop 0.3H
+n=35  win 40.0%  exp $-4.1
+t=-0.39  stops=17</title></circle><circle cx="363.25714285714287" cy="222.1457742528239" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.5H / stop 0.5H
+n=35  win 45.7%  exp $-8.9
+t=-0.71  stops=9</title></circle><circle cx="383.0857142857143" cy="172.75715528426997" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.5H / stop 1H
+n=35  win 48.6%  exp $-0.8
+t=-0.06  stops=2</title></circle><circle cx="383.0857142857143" cy="183.75907401809056" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.5H / stop 1.5H
+n=35  win 48.6%  exp $-2.6
+t=-0.19  stops=1</title></circle><circle cx="383.0857142857143" cy="195.54425930156128" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.5H / stop 2H
+n=35  win 48.6%  exp $-4.5
+t=-0.30  stops=1</title></circle><circle cx="383.0857142857143" cy="200.91624544221247" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.5H / stop 3H
+n=35  win 48.6%  exp $-5.4
+t=-0.35  stops=0</title></circle><circle cx="323.6" cy="225.3827243130953" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.8H / stop 0.3H
+n=35  win 40.0%  exp $-9.4
+t=-1.00  stops=17</title></circle><circle cx="363.25714285714287" cy="247.7857127297046" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.8H / stop 0.5H
+n=35  win 45.7%  exp $-13.1
+t=-1.10  stops=9</title></circle><circle cx="383.0857142857143" cy="179.08388172641747" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.8H / stop 1H
+n=35  win 48.6%  exp $-1.8
+t=-0.13  stops=2</title></circle><circle cx="383.0857142857143" cy="190.08580046023803" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.8H / stop 1.5H
+n=35  win 48.6%  exp $-3.6
+t=-0.24  stops=1</title></circle><circle cx="383.0857142857143" cy="201.87098574370876" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.8H / stop 2H
+n=35  win 48.6%  exp $-5.6
+t=-0.35  stops=1</title></circle><circle cx="383.0857142857143" cy="207.24297188435995" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 0.8H / stop 3H
+n=35  win 48.6%  exp $-6.4
+t=-0.40  stops=0</title></circle><circle cx="323.6" cy="228.86460814562832" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 1H / stop 0.3H
+n=35  win 40.0%  exp $-10.0
+t=-1.08  stops=17</title></circle><circle cx="363.25714285714287" cy="246.6938496059596" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 1H / stop 0.5H
+n=35  win 45.7%  exp $-12.9
+t=-1.08  stops=9</title></circle><circle cx="383.0857142857143" cy="221.28423804387333" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 1H / stop 1H
+n=35  win 48.6%  exp $-8.7
+t=-0.75  stops=2</title></circle><circle cx="383.0857142857143" cy="232.28615677769392" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 1H / stop 1.5H
+n=35  win 48.6%  exp $-10.5
+t=-0.85  stops=1</title></circle><circle cx="383.0857142857143" cy="244.07134206116464" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 1H / stop 2H
+n=35  win 48.6%  exp $-12.5
+t=-0.93  stops=1</title></circle><circle cx="383.0857142857143" cy="249.44332820181583" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+fade target 1H / stop 3H
+n=35  win 48.6%  exp $-13.4
+t=-0.96  stops=0</title></circle><circle cx="601.2" cy="149.7487794871653" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.1H / stop 0.3H
+n=35  win 80.0%  exp $3.0
+t=0.67  stops=6</title></circle><circle cx="601.2" cy="172.13355202531045" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.1H / stop 0.5H
+n=35  win 80.0%  exp $-0.7
+t=-0.11  stops=5</title></circle><circle cx="601.2" cy="147.8846522836456" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.1H / stop 1H
+n=35  win 80.0%  exp $3.3
+t=0.71  stops=0</title></circle><circle cx="601.2" cy="147.8846522836456" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.1H / stop 1.5H
+n=35  win 80.0%  exp $3.3
+t=0.71  stops=0</title></circle><circle cx="601.2" cy="147.8846522836456" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.1H / stop 2H
+n=35  win 80.0%  exp $3.3
+t=0.71  stops=0</title></circle><circle cx="601.2" cy="147.8846522836456" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.1H / stop 3H
+n=35  win 80.0%  exp $3.3
+t=0.71  stops=0</title></circle><circle cx="521.8857142857144" cy="125.18855955851922" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.2H / stop 0.3H
+n=35  win 68.6%  exp $7.0
+t=1.03  stops=10</title></circle><circle cx="521.8857142857144" cy="161.31231710341268" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.2H / stop 0.5H
+n=35  win 68.6%  exp $1.1
+t=0.13  stops=7</title></circle><circle cx="521.8857142857144" cy="127.4497503485876" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.2H / stop 1H
+n=35  win 68.6%  exp $6.6
+t=0.92  stops=0</title></circle><circle cx="521.8857142857144" cy="127.4497503485876" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.2H / stop 1.5H
+n=35  win 68.6%  exp $6.6
+t=0.92  stops=0</title></circle><circle cx="521.8857142857144" cy="127.4497503485876" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.2H / stop 2H
+n=35  win 68.6%  exp $6.6
+t=0.92  stops=0</title></circle><circle cx="521.8857142857144" cy="127.4497503485876" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.2H / stop 3H
+n=35  win 68.6%  exp $6.6
+t=0.92  stops=0</title></circle><circle cx="462.4" cy="119.32896222515359" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.3H / stop 0.3H
+n=35  win 60.0%  exp $8.0
+t=0.93  stops=13</title></circle><circle cx="462.4" cy="167.517834598202" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.3H / stop 0.5H
+n=35  win 60.0%  exp $0.1
+t=0.01  stops=9</title></circle><circle cx="462.4" cy="131.53539185437165" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.3H / stop 1H
+n=35  win 60.0%  exp $6.0
+t=0.65  stops=0</title></circle><circle cx="462.4" cy="131.53539185437165" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.3H / stop 1.5H
+n=35  win 60.0%  exp $6.0
+t=0.65  stops=0</title></circle><circle cx="462.4" cy="131.53539185437165" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.3H / stop 2H
+n=35  win 60.0%  exp $6.0
+t=0.65  stops=0</title></circle><circle cx="462.4" cy="131.53539185437165" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.3H / stop 3H
+n=35  win 60.0%  exp $6.0
+t=0.65  stops=0</title></circle><circle cx="422.74285714285713" cy="85.49160641784965" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.5H / stop 0.3H
+n=35  win 54.3%  exp $13.5
+t=1.26  stops=14</title></circle><circle cx="422.74285714285713" cy="138.25422574717606" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.5H / stop 0.5H
+n=35  win 54.3%  exp $4.9
+t=0.39  stops=10</title></circle><circle cx="422.74285714285713" cy="113.7061503940404" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.5H / stop 1H
+n=35  win 54.3%  exp $8.9
+t=0.75  stops=1</title></circle><circle cx="422.74285714285713" cy="111.10010909375609" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.5H / stop 1.5H
+n=35  win 54.3%  exp $9.3
+t=0.79  stops=0</title></circle><circle cx="422.74285714285713" cy="111.10010909375609" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.5H / stop 2H
+n=35  win 54.3%  exp $9.3
+t=0.79  stops=0</title></circle><circle cx="422.74285714285713" cy="111.10010909375609" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.5H / stop 3H
+n=35  win 54.3%  exp $9.3
+t=0.79  stops=0</title></circle><circle cx="422.74285714285713" cy="46.653032522899906" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.8H / stop 0.3H
+n=35  win 54.3%  exp $19.9
+t=1.53  stops=14</title></circle><circle cx="422.74285714285713" cy="99.41565185222635" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.8H / stop 0.5H
+n=35  win 54.3%  exp $11.2
+t=0.77  stops=10</title></circle><circle cx="422.74285714285713" cy="74.86757649909066" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.8H / stop 1H
+n=35  win 54.3%  exp $15.3
+t=1.08  stops=1</title></circle><circle cx="422.74285714285713" cy="72.26153519880631" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.8H / stop 1.5H
+n=35  win 54.3%  exp $15.7
+t=1.12  stops=0</title></circle><circle cx="422.74285714285713" cy="72.26153519880631" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.8H / stop 2H
+n=35  win 54.3%  exp $15.7
+t=1.12  stops=0</title></circle><circle cx="422.74285714285713" cy="72.26153519880631" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 0.8H / stop 3H
+n=35  win 54.3%  exp $15.7
+t=1.12  stops=0</title></circle><circle cx="402.91428571428565" cy="122.00475069658165" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 1H / stop 0.3H
+n=35  win 51.4%  exp $7.5
+t=0.70  stops=15</title></circle><circle cx="402.91428571428565" cy="187.64284471573004" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 1H / stop 0.5H
+n=35  win 51.4%  exp $-3.2
+t=-0.24  stops=11</title></circle><circle cx="402.91428571428565" cy="139.11576195612668" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 1H / stop 1H
+n=35  win 51.4%  exp $4.7
+t=0.41  stops=1</title></circle><circle cx="402.91428571428565" cy="136.50972065584233" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 1H / stop 1.5H
+n=35  win 51.4%  exp $5.2
+t=0.45  stops=0</title></circle><circle cx="402.91428571428565" cy="136.50972065584233" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 1H / stop 2H
+n=35  win 51.4%  exp $5.2
+t=0.45  stops=0</title></circle><circle cx="402.91428571428565" cy="136.50972065584233" r="3" fill="#7ad67a" opacity="0.55" stroke="#7ad67a" stroke-width="1"><title>first 2 cash hours (09:30-11:30 ET)
+momentum target 1H / stop 3H
+n=35  win 51.4%  exp $5.2
+t=0.45  stops=0</title></circle><circle cx="450.83333333333337" cy="192.71680757634232" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.1H / stop 0.3H
+n=24  win 58.3%  exp $-4.1
+t=-0.67  stops=3</title></circle><circle cx="479.75" cy="178.41267407646592" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.1H / stop 0.5H
+n=24  win 62.5%  exp $-1.7
+t=-0.27  stops=1</title></circle><circle cx="479.75" cy="175.4473183321972" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.1H / stop 1H
+n=24  win 62.5%  exp $-1.2
+t=-0.20  stops=0</title></circle><circle cx="479.75" cy="175.4473183321972" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.1H / stop 1.5H
+n=24  win 62.5%  exp $-1.2
+t=-0.20  stops=0</title></circle><circle cx="479.75" cy="175.4473183321972" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.1H / stop 2H
+n=24  win 62.5%  exp $-1.2
+t=-0.20  stops=0</title></circle><circle cx="479.75" cy="175.4473183321972" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.1H / stop 3H
+n=24  win 62.5%  exp $-1.2
+t=-0.20  stops=0</title></circle><circle cx="393" cy="205.9110560940441" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.2H / stop 0.3H
+n=24  win 50.0%  exp $-6.2
+t=-0.94  stops=4</title></circle><circle cx="421.91666666666663" cy="199.19608198515175" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.2H / stop 0.5H
+n=24  win 54.2%  exp $-5.1
+t=-0.70  stops=2</title></circle><circle cx="421.91666666666663" cy="215.2488123048445" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.2H / stop 1H
+n=24  win 54.2%  exp $-7.7
+t=-0.87  stops=1</title></circle><circle cx="421.91666666666663" cy="234.2668983688056" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.2H / stop 1.5H
+n=24  win 54.2%  exp $-10.9
+t=-0.96  stops=1</title></circle><circle cx="421.91666666666663" cy="235.06357018508703" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.2H / stop 2H
+n=24  win 54.2%  exp $-11.0
+t=-0.96  stops=0</title></circle><circle cx="421.91666666666663" cy="235.06357018508703" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.2H / stop 3H
+n=24  win 54.2%  exp $-11.0
+t=-0.96  stops=0</title></circle><circle cx="393" cy="198.0373105484093" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.3H / stop 0.3H
+n=24  win 50.0%  exp $-4.9
+t=-0.71  stops=4</title></circle><circle cx="421.91666666666663" cy="191.32233643951696" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.3H / stop 0.5H
+n=24  win 54.2%  exp $-3.8
+t=-0.50  stops=2</title></circle><circle cx="421.91666666666663" cy="207.37506675920972" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.3H / stop 1H
+n=24  win 54.2%  exp $-6.5
+t=-0.71  stops=1</title></circle><circle cx="421.91666666666663" cy="226.39315282317082" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.3H / stop 1.5H
+n=24  win 54.2%  exp $-9.6
+t=-0.83  stops=1</title></circle><circle cx="421.91666666666663" cy="227.18982463945224" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.3H / stop 2H
+n=24  win 54.2%  exp $-9.7
+t=-0.83  stops=0</title></circle><circle cx="421.91666666666663" cy="227.18982463945224" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.3H / stop 3H
+n=24  win 54.2%  exp $-9.7
+t=-0.83  stops=0</title></circle><circle cx="364.08333333333326" cy="217.21662045095763" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.5H / stop 0.3H
+n=24  win 45.8%  exp $-8.1
+t=-1.22  stops=4</title></circle><circle cx="393" cy="210.50164634206527" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.5H / stop 0.5H
+n=24  win 50.0%  exp $-7.0
+t=-0.94  stops=2</title></circle><circle cx="393" cy="226.55437666175806" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.5H / stop 1H
+n=24  win 50.0%  exp $-9.6
+t=-1.08  stops=1</title></circle><circle cx="393" cy="245.57246272571916" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.5H / stop 1.5H
+n=24  win 50.0%  exp $-12.7
+t=-1.13  stops=1</title></circle><circle cx="393" cy="246.36913454200058" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.5H / stop 2H
+n=24  win 50.0%  exp $-12.8
+t=-1.13  stops=0</title></circle><circle cx="393" cy="246.36913454200058" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.5H / stop 3H
+n=24  win 50.0%  exp $-12.8
+t=-1.13  stops=0</title></circle><circle cx="364.08333333333326" cy="217.21662045095763" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.8H / stop 0.3H
+n=24  win 45.8%  exp $-8.1
+t=-1.22  stops=4</title></circle><circle cx="393" cy="210.50164634206527" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.8H / stop 0.5H
+n=24  win 50.0%  exp $-7.0
+t=-0.94  stops=2</title></circle><circle cx="393" cy="226.55437666175806" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.8H / stop 1H
+n=24  win 50.0%  exp $-9.6
+t=-1.08  stops=1</title></circle><circle cx="393" cy="245.57246272571916" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.8H / stop 1.5H
+n=24  win 50.0%  exp $-12.7
+t=-1.13  stops=1</title></circle><circle cx="393" cy="246.36913454200058" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.8H / stop 2H
+n=24  win 50.0%  exp $-12.8
+t=-1.13  stops=0</title></circle><circle cx="393" cy="246.36913454200058" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 0.8H / stop 3H
+n=24  win 50.0%  exp $-12.8
+t=-1.13  stops=0</title></circle><circle cx="364.08333333333326" cy="217.21662045095763" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 1H / stop 0.3H
+n=24  win 45.8%  exp $-8.1
+t=-1.22  stops=4</title></circle><circle cx="393" cy="210.50164634206527" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 1H / stop 0.5H
+n=24  win 50.0%  exp $-7.0
+t=-0.94  stops=2</title></circle><circle cx="393" cy="226.55437666175806" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 1H / stop 1H
+n=24  win 50.0%  exp $-9.6
+t=-1.08  stops=1</title></circle><circle cx="393" cy="245.57246272571916" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 1H / stop 1.5H
+n=24  win 50.0%  exp $-12.7
+t=-1.13  stops=1</title></circle><circle cx="393" cy="246.36913454200058" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 1H / stop 2H
+n=24  win 50.0%  exp $-12.8
+t=-1.13  stops=0</title></circle><circle cx="393" cy="246.36913454200058" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+fade target 1H / stop 3H
+n=24  win 50.0%  exp $-12.8
+t=-1.13  stops=0</title></circle><circle cx="450.83333333333337" cy="182.46275453131176" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.1H / stop 0.3H
+n=24  win 58.3%  exp $-2.4
+t=-0.53  stops=2</title></circle><circle cx="450.83333333333337" cy="180.91526646174196" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.1H / stop 0.5H
+n=24  win 58.3%  exp $-2.1
+t=-0.48  stops=0</title></circle><circle cx="450.83333333333337" cy="180.91526646174196" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.1H / stop 1H
+n=24  win 58.3%  exp $-2.1
+t=-0.48  stops=0</title></circle><circle cx="450.83333333333337" cy="180.91526646174196" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.1H / stop 1.5H
+n=24  win 58.3%  exp $-2.1
+t=-0.48  stops=0</title></circle><circle cx="450.83333333333337" cy="180.91526646174196" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.1H / stop 2H
+n=24  win 58.3%  exp $-2.1
+t=-0.48  stops=0</title></circle><circle cx="450.83333333333337" cy="180.91526646174196" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.1H / stop 3H
+n=24  win 58.3%  exp $-2.1
+t=-0.48  stops=0</title></circle><circle cx="364.08333333333326" cy="185.25941792827854" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.2H / stop 0.3H
+n=24  win 45.8%  exp $-2.8
+t=-0.50  stops=3</title></circle><circle cx="393" cy="166.1655693002727" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.2H / stop 0.5H
+n=24  win 50.0%  exp $0.3
+t=0.06  stops=0</title></circle><circle cx="393" cy="166.1655693002727" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.2H / stop 1H
+n=24  win 50.0%  exp $0.3
+t=0.06  stops=0</title></circle><circle cx="393" cy="166.1655693002727" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.2H / stop 1.5H
+n=24  win 50.0%  exp $0.3
+t=0.06  stops=0</title></circle><circle cx="393" cy="166.1655693002727" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.2H / stop 2H
+n=24  win 50.0%  exp $0.3
+t=0.06  stops=0</title></circle><circle cx="393" cy="166.1655693002727" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.2H / stop 3H
+n=24  win 50.0%  exp $0.3
+t=0.06  stops=0</title></circle><circle cx="364.08333333333326" cy="162.3626894515907" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.3H / stop 0.3H
+n=24  win 45.8%  exp $0.9
+t=0.13  stops=3</title></circle><circle cx="393" cy="143.18337954904237" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.3H / stop 0.5H
+n=24  win 50.0%  exp $4.1
+t=0.61  stops=0</title></circle><circle cx="393" cy="143.18337954904237" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.3H / stop 1H
+n=24  win 50.0%  exp $4.1
+t=0.61  stops=0</title></circle><circle cx="393" cy="143.18337954904237" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.3H / stop 1.5H
+n=24  win 50.0%  exp $4.1
+t=0.61  stops=0</title></circle><circle cx="393" cy="143.18337954904237" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.3H / stop 2H
+n=24  win 50.0%  exp $4.1
+t=0.61  stops=0</title></circle><circle cx="393" cy="143.18337954904237" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.3H / stop 3H
+n=24  win 50.0%  exp $4.1
+t=0.61  stops=0</title></circle><circle cx="335.16666666666674" cy="169.07766356048307" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.5H / stop 0.3H
+n=24  win 41.7%  exp $-0.2
+t=-0.02  stops=3</title></circle><circle cx="364.08333333333326" cy="149.89835365793473" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.5H / stop 0.5H
+n=24  win 45.8%  exp $3.0
+t=0.40  stops=0</title></circle><circle cx="364.08333333333326" cy="149.89835365793473" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.5H / stop 1H
+n=24  win 45.8%  exp $3.0
+t=0.40  stops=0</title></circle><circle cx="364.08333333333326" cy="149.89835365793473" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.5H / stop 1.5H
+n=24  win 45.8%  exp $3.0
+t=0.40  stops=0</title></circle><circle cx="364.08333333333326" cy="149.89835365793473" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.5H / stop 2H
+n=24  win 45.8%  exp $3.0
+t=0.40  stops=0</title></circle><circle cx="364.08333333333326" cy="149.89835365793473" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.5H / stop 3H
+n=24  win 45.8%  exp $3.0
+t=0.40  stops=0</title></circle><circle cx="335.16666666666674" cy="160.63216766637504" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.8H / stop 0.3H
+n=24  win 41.7%  exp $1.2
+t=0.15  stops=3</title></circle><circle cx="364.08333333333326" cy="141.45285776382673" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.8H / stop 0.5H
+n=24  win 45.8%  exp $4.4
+t=0.54  stops=0</title></circle><circle cx="364.08333333333326" cy="141.45285776382673" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.8H / stop 1H
+n=24  win 45.8%  exp $4.4
+t=0.54  stops=0</title></circle><circle cx="364.08333333333326" cy="141.45285776382673" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.8H / stop 1.5H
+n=24  win 45.8%  exp $4.4
+t=0.54  stops=0</title></circle><circle cx="364.08333333333326" cy="141.45285776382673" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.8H / stop 2H
+n=24  win 45.8%  exp $4.4
+t=0.54  stops=0</title></circle><circle cx="364.08333333333326" cy="141.45285776382673" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 0.8H / stop 3H
+n=24  win 45.8%  exp $4.4
+t=0.54  stops=0</title></circle><circle cx="335.16666666666674" cy="153.0249332407903" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 1H / stop 0.3H
+n=24  win 41.7%  exp $2.5
+t=0.27  stops=3</title></circle><circle cx="364.08333333333326" cy="133.84562333824195" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 1H / stop 0.5H
+n=24  win 45.8%  exp $5.6
+t=0.63  stops=0</title></circle><circle cx="364.08333333333326" cy="133.84562333824195" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 1H / stop 1H
+n=24  win 45.8%  exp $5.6
+t=0.63  stops=0</title></circle><circle cx="364.08333333333326" cy="133.84562333824195" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 1H / stop 1.5H
+n=24  win 45.8%  exp $5.6
+t=0.63  stops=0</title></circle><circle cx="364.08333333333326" cy="133.84562333824195" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 1H / stop 2H
+n=24  win 45.8%  exp $5.6
+t=0.63  stops=0</title></circle><circle cx="364.08333333333326" cy="133.84562333824195" r="3" fill="#d47ae0" opacity="0.55" stroke="#d47ae0" stroke-width="1"><title>last 2 cash hours (14:00-16:00 ET)
+momentum target 1H / stop 3H
+n=24  win 45.8%  exp $5.6
+t=0.63  stops=0</title></circle><text x="393" y="314" class="ax" text-anchor="middle">win rate (%)   -   dot size = number of trades</text></svg>
+  <p class="legend"><span><span class="sw" style="background:#4c8bf5"></span>full session</span><span><span class="sw" style="background:#f5b64c"></span>cash hours</span><span><span class="sw" style="background:#7ad67a"></span>first 2 cash hours</span><span><span class="sw" style="background:#d47ae0"></span>last 2 cash hours</span></p>
+  <p>This is the chart that answers your question directly: a rule can sit at 90% win rate and still be at or below the $0 line. Hover any dot for its full context. Nothing above the line clears t = 2.</p>
+</div>
+
+<h2>Object 3 &mdash; equity curves of the four best rules</h2>
+<div class="card"><svg viewBox="0 0 760 320" class="chart"><line x1="46" y1="233.03083700440527" x2="740" y2="233.03083700440527" class="zero"/><text x="38" y="237.03083700440527" class="ax" text-anchor="end">$0</text><text x="38" y="50" class="ax" text-anchor="end">+$696</text><polyline points="46,215.29515418502203 66.41176470588235,227.92511013215858 86.8235294117647,241.8986784140969 107.23529411764707,254.5286343612335 127.6470588235294,231.41850220264317 148.05882352941177,243.24229074889868 168.47058823529414,246.73568281938327 188.88235294117646,256.94713656387665 209.2941176470588,267.9647577092511 229.7058823529412,245.3920704845815 250.11764705882354,222.01321585903082 270.52941176470586,197.55947136563879 290.9411764705883,214.48898678414096 311.35294117647055,184.3920704845815 331.7647058823529,170.4185022026432 352.1764705882353,184.3920704845815 372.5882352941176,171.49339207048456 393,151.6079295154185 413.4117647058824,123.66079295154185 433.8235294117647,121.51101321585904 454.2352941176471,138.1718061674009 474.64705882352945,155.6387665198238 495.05882352941177,171.22466960352423 515.4705882352941,168.26872246696036 535.8823529411766,183.04845814977972 556.2941176470588,174.1806167400881 576.7058823529411,148.65198237885463 597.1176470588235,69.91629955947138 617.5294117647059,72.87224669603523 637.9411764705882,64.0044052863436 658.3529411764706,54.330396475770925 678.7647058823529,65.88546255506608 699.1764705882352,64.54185022026431 719.5882352941177,74.48458149779736 740,46" fill="none" stroke="#7ad67a" stroke-width="2"/><text x="52" y="62" class="ax" fill="#7ad67a">momentum 0.8H/0.3H  first2h  +$696</text><polyline points="46,215.29515418502203 66.41176470588235,222.28193832599118 86.8235294117647,226.31277533039648 107.23529411764707,243.7797356828194 127.6470588235294,220.66960352422907 148.05882352941177,242.70484581497797 168.47058823529414,246.19823788546256 188.88235294117646,258.29074889867843 209.2941176470588,290 229.7058823529412,267.4273127753304 250.11764705882354,244.04845814977975 270.52941176470586,219.32599118942733 290.9411764705883,243.51101321585904 311.35294117647055,213.41409691629957 331.7647058823529,199.44052863436121 352.1764705882353,211.53303964757708 372.5882352941176,198.63436123348018 393,178.48017621145374 413.4117647058824,150.80176211453744 433.8235294117647,148.65198237885463 454.2352941176471,169.07488986784142 474.64705882352945,185.46696035242292 495.05882352941177,199.70925110132157 515.4705882352941,196.75330396475772 535.8823529411766,211.80176211453744 556.2941176470588,203.2026431718062 576.7058823529411,177.67400881057267 597.1176470588235,98.93832599118943 617.5294117647059,101.89427312775331 637.9411764705882,92.75770925110135 658.3529411764706,83.352422907489 678.7647058823529,107.80616740088104 699.1764705882352,106.46255506607929 719.5882352941177,113.98678414096915 740,85.50220264317181" fill="none" stroke="#4c8bf5" stroke-width="2"/><text x="52" y="78" class="ax" fill="#4c8bf5">momentum 0.8H/1.5H  first2h  +$549</text><polyline points="46,215.29515418502203 66.41176470588235,222.28193832599118 86.8235294117647,226.31277533039648 107.23529411764707,243.7797356828194 127.6470588235294,220.66960352422907 148.05882352941177,242.70484581497797 168.47058823529414,246.19823788546256 188.88235294117646,258.29074889867843 209.2941176470588,290 229.7058823529412,267.4273127753304 250.11764705882354,244.04845814977975 270.52941176470586,219.32599118942733 290.9411764705883,243.51101321585904 311.35294117647055,213.41409691629957 331.7647058823529,199.44052863436121 352.1764705882353,211.53303964757708 372.5882352941176,198.63436123348018 393,178.48017621145374 413.4117647058824,150.80176211453744 433.8235294117647,148.65198237885463 454.2352941176471,169.07488986784142 474.64705882352945,185.46696035242292 495.05882352941177,199.70925110132157 515.4705882352941,196.75330396475772 535.8823529411766,211.80176211453744 556.2941176470588,203.2026431718062 576.7058823529411,177.67400881057267 597.1176470588235,98.93832599118943 617.5294117647059,101.89427312775331 637.9411764705882,92.75770925110135 658.3529411764706,83.352422907489 678.7647058823529,107.80616740088104 699.1764705882352,106.46255506607929 719.5882352941177,113.98678414096915 740,85.50220264317181" fill="none" stroke="#f5b64c" stroke-width="2"/><text x="52" y="94" class="ax" fill="#f5b64c">momentum 0.8H/2H  first2h  +$549</text><polyline points="46,215.29515418502203 66.41176470588235,222.28193832599118 86.8235294117647,226.31277533039648 107.23529411764707,243.7797356828194 127.6470588235294,220.66960352422907 148.05882352941177,242.70484581497797 168.47058823529414,246.19823788546256 188.88235294117646,258.29074889867843 209.2941176470588,290 229.7058823529412,267.4273127753304 250.11764705882354,244.04845814977975 270.52941176470586,219.32599118942733 290.9411764705883,243.51101321585904 311.35294117647055,213.41409691629957 331.7647058823529,199.44052863436121 352.1764705882353,211.53303964757708 372.5882352941176,198.63436123348018 393,178.48017621145374 413.4117647058824,150.80176211453744 433.8235294117647,148.65198237885463 454.2352941176471,169.07488986784142 474.64705882352945,185.46696035242292 495.05882352941177,199.70925110132157 515.4705882352941,196.75330396475772 535.8823529411766,211.80176211453744 556.2941176470588,203.2026431718062 576.7058823529411,177.67400881057267 597.1176470588235,98.93832599118943 617.5294117647059,101.89427312775331 637.9411764705882,92.75770925110135 658.3529411764706,83.352422907489 678.7647058823529,107.80616740088104 699.1764705882352,106.46255506607929 719.5882352941177,113.98678414096915 740,85.50220264317181" fill="none" stroke="#d47ae0" stroke-width="2"/><text x="52" y="110" class="ax" fill="#d47ae0">momentum 0.8H/3H  first2h  +$549</text><text x="393" y="314" class="ax" text-anchor="middle">trade number</text></svg></div>
+
+<h2>Object 3 &mdash; full table, sorted by expectancy</h2>
+<div class="card" style="overflow-x:auto"><table><thead><tr>
+    <th>hours traded</th><th>rule</th><th>target</th><th>stop</th><th>n</th>
+    <th>win %</th><th>expectancy</th><th>total</th><th>t</th><th>stops</th><th>avg win</th><th>avg loss</th></tr></thead><tbody><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.8H</td><td>0.3H</td>
+      <td>35</td><td>54.3</td><td>+$20</td><td>+$696</td>
+      <td>1.53</td><td>14</td><td>$75</td><td>$-45</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.8H</td><td>1.5H</td>
+      <td>35</td><td>54.3</td><td>+$16</td><td>+$549</td>
+      <td>1.12</td><td>0</td><td>$75</td><td>$-55</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.8H</td><td>2H</td>
+      <td>35</td><td>54.3</td><td>+$16</td><td>+$549</td>
+      <td>1.12</td><td>0</td><td>$75</td><td>$-55</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.8H</td><td>3H</td>
+      <td>35</td><td>54.3</td><td>+$16</td><td>+$549</td>
+      <td>1.12</td><td>0</td><td>$75</td><td>$-55</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.8H</td><td>1H</td>
+      <td>35</td><td>54.3</td><td>+$15</td><td>+$534</td>
+      <td>1.08</td><td>1</td><td>$75</td><td>$-56</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.5H</td><td>0.3H</td>
+      <td>35</td><td>54.3</td><td>+$14</td><td>+$473</td>
+      <td>1.26</td><td>14</td><td>$63</td><td>$-45</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.8H</td><td>1.5H</td>
+      <td>84</td><td>50.0</td><td>+$13</td><td>+$1079</td>
+      <td>1.54</td><td>0</td><td>$63</td><td>$-37</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.8H</td><td>2H</td>
+      <td>84</td><td>50.0</td><td>+$13</td><td>+$1079</td>
+      <td>1.54</td><td>0</td><td>$63</td><td>$-37</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.8H</td><td>3H</td>
+      <td>84</td><td>50.0</td><td>+$13</td><td>+$1079</td>
+      <td>1.54</td><td>0</td><td>$63</td><td>$-37</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.8H</td><td>1H</td>
+      <td>84</td><td>50.0</td><td>+$13</td><td>+$1064</td>
+      <td>1.51</td><td>1</td><td>$63</td><td>$-38</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.8H</td><td>0.3H</td>
+      <td>84</td><td>47.6</td><td>+$12</td><td>+$1039</td>
+      <td>1.52</td><td>23</td><td>$65</td><td>$-35</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.8H</td><td>1.5H</td>
+      <td>102</td><td>50.0</td><td>+$11</td><td>+$1149</td>
+      <td>1.40</td><td>0</td><td>$66</td><td>$-44</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.8H</td><td>2H</td>
+      <td>102</td><td>50.0</td><td>+$11</td><td>+$1149</td>
+      <td>1.40</td><td>0</td><td>$66</td><td>$-44</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.8H</td><td>3H</td>
+      <td>102</td><td>50.0</td><td>+$11</td><td>+$1149</td>
+      <td>1.40</td><td>0</td><td>$66</td><td>$-44</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.8H</td><td>0.5H</td>
+      <td>35</td><td>54.3</td><td>+$11</td><td>+$394</td>
+      <td>0.77</td><td>10</td><td>$75</td><td>$-64</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.8H</td><td>0.5H</td>
+      <td>84</td><td>50.0</td><td>+$11</td><td>+$934</td>
+      <td>1.30</td><td>11</td><td>$63</td><td>$-41</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.8H</td><td>1H</td>
+      <td>102</td><td>50.0</td><td>+$11</td><td>+$1134</td>
+      <td>1.38</td><td>1</td><td>$66</td><td>$-44</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>1H</td><td>1.5H</td>
+      <td>84</td><td>48.8</td><td>+$10</td><td>+$846</td>
+      <td>1.17</td><td>0</td><td>$60</td><td>$-38</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>1H</td><td>2H</td>
+      <td>84</td><td>48.8</td><td>+$10</td><td>+$846</td>
+      <td>1.17</td><td>0</td><td>$60</td><td>$-38</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>1H</td><td>3H</td>
+      <td>84</td><td>48.8</td><td>+$10</td><td>+$846</td>
+      <td>1.17</td><td>0</td><td>$60</td><td>$-38</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>1H</td><td>1.5H</td>
+      <td>102</td><td>49.0</td><td>+$10</td><td>+$1013</td>
+      <td>1.18</td><td>0</td><td>$66</td><td>$-44</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>1H</td><td>2H</td>
+      <td>102</td><td>49.0</td><td>+$10</td><td>+$1013</td>
+      <td>1.18</td><td>0</td><td>$66</td><td>$-44</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>1H</td><td>3H</td>
+      <td>102</td><td>49.0</td><td>+$10</td><td>+$1013</td>
+      <td>1.18</td><td>0</td><td>$66</td><td>$-44</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>1H</td><td>1H</td>
+      <td>84</td><td>48.8</td><td>+$10</td><td>+$831</td>
+      <td>1.15</td><td>1</td><td>$60</td><td>$-38</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>1H</td><td>1H</td>
+      <td>102</td><td>49.0</td><td>+$10</td><td>+$998</td>
+      <td>1.16</td><td>1</td><td>$66</td><td>$-44</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.8H</td><td>0.5H</td>
+      <td>102</td><td>50.0</td><td>+$10</td><td>+$974</td>
+      <td>1.18</td><td>17</td><td>$66</td><td>$-47</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.5H</td><td>1.5H</td>
+      <td>102</td><td>51.0</td><td>+$9</td><td>+$961</td>
+      <td>1.47</td><td>0</td><td>$58</td><td>$-41</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.5H</td><td>2H</td>
+      <td>102</td><td>51.0</td><td>+$9</td><td>+$961</td>
+      <td>1.47</td><td>0</td><td>$58</td><td>$-41</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.5H</td><td>3H</td>
+      <td>102</td><td>51.0</td><td>+$9</td><td>+$961</td>
+      <td>1.47</td><td>0</td><td>$58</td><td>$-41</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.8H</td><td>0.3H</td>
+      <td>102</td><td>47.1</td><td>+$9</td><td>+$954</td>
+      <td>1.29</td><td>30</td><td>$64</td><td>$-39</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.5H</td><td>1.5H</td>
+      <td>35</td><td>54.3</td><td>+$9</td><td>+$326</td>
+      <td>0.79</td><td>0</td><td>$63</td><td>$-55</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.5H</td><td>2H</td>
+      <td>35</td><td>54.3</td><td>+$9</td><td>+$326</td>
+      <td>0.79</td><td>0</td><td>$63</td><td>$-55</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.5H</td><td>3H</td>
+      <td>35</td><td>54.3</td><td>+$9</td><td>+$326</td>
+      <td>0.79</td><td>0</td><td>$63</td><td>$-55</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.5H</td><td>1H</td>
+      <td>102</td><td>51.0</td><td>+$9</td><td>+$946</td>
+      <td>1.44</td><td>1</td><td>$58</td><td>$-41</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.5H</td><td>1H</td>
+      <td>35</td><td>54.3</td><td>+$9</td><td>+$312</td>
+      <td>0.75</td><td>1</td><td>$63</td><td>$-56</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>1H</td><td>0.3H</td>
+      <td>84</td><td>46.4</td><td>+$9</td><td>+$742</td>
+      <td>1.05</td><td>24</td><td>$62</td><td>$-37</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.3H</td><td>0.3H</td>
+      <td>35</td><td>60.0</td><td>+$8</td><td>+$279</td>
+      <td>0.93</td><td>13</td><td>$45</td><td>$-48</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.3H</td><td>1H</td>
+      <td>102</td><td>56.9</td><td>+$8</td><td>+$813</td>
+      <td>1.59</td><td>0</td><td>$44</td><td>$-39</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.3H</td><td>1.5H</td>
+      <td>102</td><td>56.9</td><td>+$8</td><td>+$813</td>
+      <td>1.59</td><td>0</td><td>$44</td><td>$-39</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.3H</td><td>2H</td>
+      <td>102</td><td>56.9</td><td>+$8</td><td>+$813</td>
+      <td>1.59</td><td>0</td><td>$44</td><td>$-39</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.3H</td><td>3H</td>
+      <td>102</td><td>56.9</td><td>+$8</td><td>+$813</td>
+      <td>1.59</td><td>0</td><td>$44</td><td>$-39</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.5H</td><td>1.5H</td>
+      <td>84</td><td>50.0</td><td>+$8</td><td>+$648</td>
+      <td>1.16</td><td>0</td><td>$53</td><td>$-37</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.5H</td><td>2H</td>
+      <td>84</td><td>50.0</td><td>+$8</td><td>+$648</td>
+      <td>1.16</td><td>0</td><td>$53</td><td>$-37</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.5H</td><td>3H</td>
+      <td>84</td><td>50.0</td><td>+$8</td><td>+$648</td>
+      <td>1.16</td><td>0</td><td>$53</td><td>$-37</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>1H</td><td>0.3H</td>
+      <td>35</td><td>51.4</td><td>+$8</td><td>+$264</td>
+      <td>0.70</td><td>15</td><td>$61</td><td>$-49</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.5H</td><td>1H</td>
+      <td>84</td><td>50.0</td><td>+$8</td><td>+$633</td>
+      <td>1.12</td><td>1</td><td>$53</td><td>$-38</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.5H</td><td>0.3H</td>
+      <td>102</td><td>48.0</td><td>+$7</td><td>+$764</td>
+      <td>1.25</td><td>29</td><td>$57</td><td>$-38</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.5H</td><td>0.5H</td>
+      <td>102</td><td>51.0</td><td>+$7</td><td>+$747</td>
+      <td>1.11</td><td>16</td><td>$58</td><td>$-45</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.5H</td><td>0.3H</td>
+      <td>84</td><td>47.6</td><td>+$7</td><td>+$608</td>
+      <td>1.13</td><td>23</td><td>$54</td><td>$-35</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.2H</td><td>0.3H</td>
+      <td>35</td><td>68.6</td><td>+$7</td><td>+$246</td>
+      <td>1.03</td><td>10</td><td>$33</td><td>$-49</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>1H</td><td>0.5H</td>
+      <td>102</td><td>49.0</td><td>+$7</td><td>+$700</td>
+      <td>0.79</td><td>18</td><td>$66</td><td>$-50</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>1H</td><td>0.3H</td>
+      <td>102</td><td>46.1</td><td>+$7</td><td>+$689</td>
+      <td>0.90</td><td>31</td><td>$62</td><td>$-40</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>1H</td><td>0.5H</td>
+      <td>84</td><td>48.8</td><td>+$7</td><td>+$564</td>
+      <td>0.74</td><td>12</td><td>$60</td><td>$-44</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.2H</td><td>1H</td>
+      <td>35</td><td>68.6</td><td>+$7</td><td>+$233</td>
+      <td>0.92</td><td>0</td><td>$33</td><td>$-50</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.2H</td><td>1.5H</td>
+      <td>35</td><td>68.6</td><td>+$7</td><td>+$233</td>
+      <td>0.92</td><td>0</td><td>$33</td><td>$-50</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.2H</td><td>2H</td>
+      <td>35</td><td>68.6</td><td>+$7</td><td>+$233</td>
+      <td>0.92</td><td>0</td><td>$33</td><td>$-50</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.2H</td><td>3H</td>
+      <td>35</td><td>68.6</td><td>+$7</td><td>+$233</td>
+      <td>0.92</td><td>0</td><td>$33</td><td>$-50</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.3H</td><td>0.3H</td>
+      <td>102</td><td>53.9</td><td>+$7</td><td>+$675</td>
+      <td>1.38</td><td>26</td><td>$44</td><td>$-37</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.3H</td><td>1H</td>
+      <td>84</td><td>54.8</td><td>+$6</td><td>+$529</td>
+      <td>1.18</td><td>0</td><td>$41</td><td>$-36</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.3H</td><td>1.5H</td>
+      <td>84</td><td>54.8</td><td>+$6</td><td>+$529</td>
+      <td>1.18</td><td>0</td><td>$41</td><td>$-36</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.3H</td><td>2H</td>
+      <td>84</td><td>54.8</td><td>+$6</td><td>+$529</td>
+      <td>1.18</td><td>0</td><td>$41</td><td>$-36</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.3H</td><td>3H</td>
+      <td>84</td><td>54.8</td><td>+$6</td><td>+$529</td>
+      <td>1.18</td><td>0</td><td>$41</td><td>$-36</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.5H</td><td>0.5H</td>
+      <td>84</td><td>50.0</td><td>+$6</td><td>+$503</td>
+      <td>0.87</td><td>11</td><td>$53</td><td>$-41</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.3H</td><td>1H</td>
+      <td>35</td><td>60.0</td><td>+$6</td><td>+$209</td>
+      <td>0.65</td><td>0</td><td>$45</td><td>$-53</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.3H</td><td>1.5H</td>
+      <td>35</td><td>60.0</td><td>+$6</td><td>+$209</td>
+      <td>0.65</td><td>0</td><td>$45</td><td>$-53</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.3H</td><td>2H</td>
+      <td>35</td><td>60.0</td><td>+$6</td><td>+$209</td>
+      <td>0.65</td><td>0</td><td>$45</td><td>$-53</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.3H</td><td>3H</td>
+      <td>35</td><td>60.0</td><td>+$6</td><td>+$209</td>
+      <td>0.65</td><td>0</td><td>$45</td><td>$-53</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>1H</td><td>0.5H</td>
+      <td>24</td><td>45.8</td><td>+$6</td><td>+$134</td>
+      <td>0.63</td><td>0</td><td>$39</td><td>$-22</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>1H</td><td>1H</td>
+      <td>24</td><td>45.8</td><td>+$6</td><td>+$134</td>
+      <td>0.63</td><td>0</td><td>$39</td><td>$-22</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>1H</td><td>1.5H</td>
+      <td>24</td><td>45.8</td><td>+$6</td><td>+$134</td>
+      <td>0.63</td><td>0</td><td>$39</td><td>$-22</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>1H</td><td>2H</td>
+      <td>24</td><td>45.8</td><td>+$6</td><td>+$134</td>
+      <td>0.63</td><td>0</td><td>$39</td><td>$-22</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>1H</td><td>3H</td>
+      <td>24</td><td>45.8</td><td>+$6</td><td>+$134</td>
+      <td>0.63</td><td>0</td><td>$39</td><td>$-22</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>1H</td><td>1.5H</td>
+      <td>35</td><td>51.4</td><td>+$5</td><td>+$181</td>
+      <td>0.45</td><td>0</td><td>$61</td><td>$-54</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>1H</td><td>2H</td>
+      <td>35</td><td>51.4</td><td>+$5</td><td>+$181</td>
+      <td>0.45</td><td>0</td><td>$61</td><td>$-54</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>1H</td><td>3H</td>
+      <td>35</td><td>51.4</td><td>+$5</td><td>+$181</td>
+      <td>0.45</td><td>0</td><td>$61</td><td>$-54</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.3H</td><td>0.3H</td>
+      <td>84</td><td>52.4</td><td>+$5</td><td>+$412</td>
+      <td>0.95</td><td>22</td><td>$42</td><td>$-36</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.5H</td><td>0.5H</td>
+      <td>35</td><td>54.3</td><td>+$5</td><td>+$171</td>
+      <td>0.39</td><td>10</td><td>$63</td><td>$-64</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>1H</td><td>1H</td>
+      <td>35</td><td>51.4</td><td>+$5</td><td>+$166</td>
+      <td>0.41</td><td>1</td><td>$61</td><td>$-55</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.3H</td><td>0.5H</td>
+      <td>102</td><td>55.9</td><td>+$4</td><td>+$454</td>
+      <td>0.83</td><td>14</td><td>$44</td><td>$-45</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.2H</td><td>1H</td>
+      <td>102</td><td>60.8</td><td>+$4</td><td>+$449</td>
+      <td>1.08</td><td>0</td><td>$32</td><td>$-38</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.2H</td><td>1.5H</td>
+      <td>102</td><td>60.8</td><td>+$4</td><td>+$449</td>
+      <td>1.08</td><td>0</td><td>$32</td><td>$-38</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.2H</td><td>2H</td>
+      <td>102</td><td>60.8</td><td>+$4</td><td>+$449</td>
+      <td>1.08</td><td>0</td><td>$32</td><td>$-38</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.2H</td><td>3H</td>
+      <td>102</td><td>60.8</td><td>+$4</td><td>+$449</td>
+      <td>1.08</td><td>0</td><td>$32</td><td>$-38</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.8H</td><td>0.5H</td>
+      <td>24</td><td>45.8</td><td>+$4</td><td>+$104</td>
+      <td>0.54</td><td>0</td><td>$36</td><td>$-22</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.8H</td><td>1H</td>
+      <td>24</td><td>45.8</td><td>+$4</td><td>+$104</td>
+      <td>0.54</td><td>0</td><td>$36</td><td>$-22</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.8H</td><td>1.5H</td>
+      <td>24</td><td>45.8</td><td>+$4</td><td>+$104</td>
+      <td>0.54</td><td>0</td><td>$36</td><td>$-22</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.8H</td><td>2H</td>
+      <td>24</td><td>45.8</td><td>+$4</td><td>+$104</td>
+      <td>0.54</td><td>0</td><td>$36</td><td>$-22</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.8H</td><td>3H</td>
+      <td>24</td><td>45.8</td><td>+$4</td><td>+$104</td>
+      <td>0.54</td><td>0</td><td>$36</td><td>$-22</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.2H</td><td>1H</td>
+      <td>84</td><td>59.5</td><td>+$4</td><td>+$354</td>
+      <td>0.97</td><td>0</td><td>$31</td><td>$-35</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.2H</td><td>1.5H</td>
+      <td>84</td><td>59.5</td><td>+$4</td><td>+$354</td>
+      <td>0.97</td><td>0</td><td>$31</td><td>$-35</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.2H</td><td>2H</td>
+      <td>84</td><td>59.5</td><td>+$4</td><td>+$354</td>
+      <td>0.97</td><td>0</td><td>$31</td><td>$-35</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.2H</td><td>3H</td>
+      <td>84</td><td>59.5</td><td>+$4</td><td>+$354</td>
+      <td>0.97</td><td>0</td><td>$31</td><td>$-35</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.3H</td><td>0.5H</td>
+      <td>24</td><td>50.0</td><td>+$4</td><td>+$98</td>
+      <td>0.61</td><td>0</td><td>$30</td><td>$-22</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.3H</td><td>1H</td>
+      <td>24</td><td>50.0</td><td>+$4</td><td>+$98</td>
+      <td>0.61</td><td>0</td><td>$30</td><td>$-22</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.3H</td><td>1.5H</td>
+      <td>24</td><td>50.0</td><td>+$4</td><td>+$98</td>
+      <td>0.61</td><td>0</td><td>$30</td><td>$-22</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.3H</td><td>2H</td>
+      <td>24</td><td>50.0</td><td>+$4</td><td>+$98</td>
+      <td>0.61</td><td>0</td><td>$30</td><td>$-22</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.3H</td><td>3H</td>
+      <td>24</td><td>50.0</td><td>+$4</td><td>+$98</td>
+      <td>0.61</td><td>0</td><td>$30</td><td>$-22</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.3H</td><td>0.5H</td>
+      <td>84</td><td>54.8</td><td>+$4</td><td>+$334</td>
+      <td>0.70</td><td>10</td><td>$41</td><td>$-41</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.2H</td><td>0.3H</td>
+      <td>102</td><td>58.8</td><td>+$3</td><td>+$343</td>
+      <td>0.87</td><td>22</td><td>$32</td><td>$-37</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.1H</td><td>1H</td>
+      <td>35</td><td>80.0</td><td>+$3</td><td>+$115</td>
+      <td>0.71</td><td>0</td><td>$15</td><td>$-45</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.1H</td><td>1.5H</td>
+      <td>35</td><td>80.0</td><td>+$3</td><td>+$115</td>
+      <td>0.71</td><td>0</td><td>$15</td><td>$-45</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.1H</td><td>2H</td>
+      <td>35</td><td>80.0</td><td>+$3</td><td>+$115</td>
+      <td>0.71</td><td>0</td><td>$15</td><td>$-45</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.1H</td><td>3H</td>
+      <td>35</td><td>80.0</td><td>+$3</td><td>+$115</td>
+      <td>0.71</td><td>0</td><td>$15</td><td>$-45</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.1H</td><td>1H</td>
+      <td>84</td><td>72.6</td><td>+$3</td><td>+$253</td>
+      <td>1.12</td><td>0</td><td>$16</td><td>$-32</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.1H</td><td>1.5H</td>
+      <td>84</td><td>72.6</td><td>+$3</td><td>+$253</td>
+      <td>1.12</td><td>0</td><td>$16</td><td>$-32</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.1H</td><td>2H</td>
+      <td>84</td><td>72.6</td><td>+$3</td><td>+$253</td>
+      <td>1.12</td><td>0</td><td>$16</td><td>$-32</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.1H</td><td>3H</td>
+      <td>84</td><td>72.6</td><td>+$3</td><td>+$253</td>
+      <td>1.12</td><td>0</td><td>$16</td><td>$-32</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.1H</td><td>0.3H</td>
+      <td>35</td><td>80.0</td><td>+$3</td><td>+$105</td>
+      <td>0.67</td><td>6</td><td>$15</td><td>$-46</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.5H</td><td>0.5H</td>
+      <td>24</td><td>45.8</td><td>+$3</td><td>+$71</td>
+      <td>0.40</td><td>0</td><td>$33</td><td>$-22</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.5H</td><td>1H</td>
+      <td>24</td><td>45.8</td><td>+$3</td><td>+$71</td>
+      <td>0.40</td><td>0</td><td>$33</td><td>$-22</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.5H</td><td>1.5H</td>
+      <td>24</td><td>45.8</td><td>+$3</td><td>+$71</td>
+      <td>0.40</td><td>0</td><td>$33</td><td>$-22</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.5H</td><td>2H</td>
+      <td>24</td><td>45.8</td><td>+$3</td><td>+$71</td>
+      <td>0.40</td><td>0</td><td>$33</td><td>$-22</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.5H</td><td>3H</td>
+      <td>24</td><td>45.8</td><td>+$3</td><td>+$71</td>
+      <td>0.40</td><td>0</td><td>$33</td><td>$-22</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>1H</td><td>0.3H</td>
+      <td>24</td><td>41.7</td><td>+$2</td><td>+$59</td>
+      <td>0.27</td><td>3</td><td>$40</td><td>$-24</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.2H</td><td>0.3H</td>
+      <td>84</td><td>57.1</td><td>+$2</td><td>+$188</td>
+      <td>0.53</td><td>19</td><td>$31</td><td>$-36</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.2H</td><td>0.5H</td>
+      <td>102</td><td>60.8</td><td>+$2</td><td>+$210</td>
+      <td>0.46</td><td>11</td><td>$32</td><td>$-44</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.2H</td><td>0.5H</td>
+      <td>84</td><td>59.5</td><td>+$2</td><td>+$170</td>
+      <td>0.43</td><td>8</td><td>$31</td><td>$-40</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.1H</td><td>1H</td>
+      <td>102</td><td>72.5</td><td>+$2</td><td>+$198</td>
+      <td>0.71</td><td>0</td><td>$16</td><td>$-36</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.1H</td><td>1.5H</td>
+      <td>102</td><td>72.5</td><td>+$2</td><td>+$198</td>
+      <td>0.71</td><td>0</td><td>$16</td><td>$-36</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.1H</td><td>2H</td>
+      <td>102</td><td>72.5</td><td>+$2</td><td>+$198</td>
+      <td>0.71</td><td>0</td><td>$16</td><td>$-36</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.1H</td><td>3H</td>
+      <td>102</td><td>72.5</td><td>+$2</td><td>+$198</td>
+      <td>0.71</td><td>0</td><td>$16</td><td>$-36</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.1H</td><td>0.5H</td>
+      <td>35</td><td>85.7</td><td>+$2</td><td>+$63</td>
+      <td>0.31</td><td>5</td><td>$15</td><td>$-80</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.1H</td><td>0.3H</td>
+      <td>35</td><td>77.1</td><td>+$1</td><td>+$52</td>
+      <td>0.32</td><td>8</td><td>$16</td><td>$-47</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.1H</td><td>0.5H</td>
+      <td>84</td><td>72.6</td><td>+$1</td><td>+$120</td>
+      <td>0.42</td><td>7</td><td>$17</td><td>$-39</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.1H</td><td>0.5H</td>
+      <td>84</td><td>72.6</td><td>+$1</td><td>+$114</td>
+      <td>0.43</td><td>5</td><td>$16</td><td>$-38</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.8H</td><td>0.3H</td>
+      <td>24</td><td>41.7</td><td>+$1</td><td>+$29</td>
+      <td>0.15</td><td>3</td><td>$37</td><td>$-24</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.2H</td><td>0.5H</td>
+      <td>35</td><td>68.6</td><td>+$1</td><td>+$38</td>
+      <td>0.13</td><td>7</td><td>$33</td><td>$-68</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.3H</td><td>0.3H</td>
+      <td>24</td><td>45.8</td><td>+$1</td><td>+$22</td>
+      <td>0.13</td><td>3</td><td>$30</td><td>$-24</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>momentum</td><td>0.1H</td><td>0.3H</td>
+      <td>84</td><td>70.2</td><td>+$0</td><td>+$30</td>
+      <td>0.12</td><td>13</td><td>$16</td><td>$-36</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.1H</td><td>0.3H</td>
+      <td>102</td><td>70.6</td><td>+$0</td><td>+$35</td>
+      <td>0.12</td><td>16</td><td>$16</td><td>$-38</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.2H</td><td>0.5H</td>
+      <td>24</td><td>50.0</td><td>+$0</td><td>+$7</td>
+      <td>0.06</td><td>0</td><td>$23</td><td>$-22</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.2H</td><td>1H</td>
+      <td>24</td><td>50.0</td><td>+$0</td><td>+$7</td>
+      <td>0.06</td><td>0</td><td>$23</td><td>$-22</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.2H</td><td>1.5H</td>
+      <td>24</td><td>50.0</td><td>+$0</td><td>+$7</td>
+      <td>0.06</td><td>0</td><td>$23</td><td>$-22</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.2H</td><td>2H</td>
+      <td>24</td><td>50.0</td><td>+$0</td><td>+$7</td>
+      <td>0.06</td><td>0</td><td>$23</td><td>$-22</td></tr><tr class="pos"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.2H</td><td>3H</td>
+      <td>24</td><td>50.0</td><td>+$0</td><td>+$7</td>
+      <td>0.06</td><td>0</td><td>$23</td><td>$-22</td></tr><tr class="pos"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.1H</td><td>1H</td>
+      <td>84</td><td>72.6</td><td>+$0</td><td>+$21</td>
+      <td>0.07</td><td>1</td><td>$17</td><td>$-44</td></tr><tr class="pos"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.3H</td><td>0.5H</td>
+      <td>35</td><td>60.0</td><td>+$0</td><td>+$3</td>
+      <td>0.01</td><td>9</td><td>$45</td><td>$-68</td></tr><tr class="pos"><td>full 23h session (18:00-17:00 ET)</td><td>momentum</td><td>0.1H</td><td>0.5H</td>
+      <td>102</td><td>72.5</td><td>+$0</td><td>+$3</td>
+      <td>0.01</td><td>8</td><td>$16</td><td>$-43</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.5H</td><td>0.3H</td>
+      <td>24</td><td>41.7</td><td>-$0</td><td>-$4</td>
+      <td>-0.02</td><td>3</td><td>$34</td><td>$-24</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.1H</td><td>1H</td>
+      <td>35</td><td>85.7</td><td>-$0</td><td>-$10</td>
+      <td>-0.04</td><td>1</td><td>$15</td><td>$-94</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.1H</td><td>0.3H</td>
+      <td>84</td><td>66.7</td><td>-$0</td><td>-$40</td>
+      <td>-0.15</td><td>16</td><td>$17</td><td>$-36</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.1H</td><td>1.5H</td>
+      <td>84</td><td>72.6</td><td>-$1</td><td>-$46</td>
+      <td>-0.13</td><td>1</td><td>$17</td><td>$-47</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>0.1H</td><td>0.5H</td>
+      <td>35</td><td>80.0</td><td>-$1</td><td>-$24</td>
+      <td>-0.11</td><td>5</td><td>$15</td><td>$-65</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.5H</td><td>1H</td>
+      <td>35</td><td>48.6</td><td>-$1</td><td>-$27</td>
+      <td>-0.06</td><td>2</td><td>$68</td><td>$-65</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.1H</td><td>1H</td>
+      <td>24</td><td>62.5</td><td>-$1</td><td>-$29</td>
+      <td>-0.20</td><td>0</td><td>$16</td><td>$-29</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.1H</td><td>1.5H</td>
+      <td>24</td><td>62.5</td><td>-$1</td><td>-$29</td>
+      <td>-0.20</td><td>0</td><td>$16</td><td>$-29</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.1H</td><td>2H</td>
+      <td>24</td><td>62.5</td><td>-$1</td><td>-$29</td>
+      <td>-0.20</td><td>0</td><td>$16</td><td>$-29</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.1H</td><td>3H</td>
+      <td>24</td><td>62.5</td><td>-$1</td><td>-$29</td>
+      <td>-0.20</td><td>0</td><td>$16</td><td>$-29</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.1H</td><td>2H</td>
+      <td>84</td><td>72.6</td><td>-$1</td><td>-$114</td>
+      <td>-0.29</td><td>1</td><td>$17</td><td>$-50</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.1H</td><td>1H</td>
+      <td>102</td><td>72.5</td><td>-$1</td><td>-$144</td>
+      <td>-0.37</td><td>2</td><td>$17</td><td>$-51</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.1H</td><td>2H</td>
+      <td>102</td><td>72.5</td><td>-$2</td><td>-$170</td>
+      <td>-0.39</td><td>1</td><td>$17</td><td>$-52</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.1H</td><td>0.5H</td>
+      <td>24</td><td>62.5</td><td>-$2</td><td>-$41</td>
+      <td>-0.27</td><td>1</td><td>$16</td><td>$-31</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.1H</td><td>3H</td>
+      <td>84</td><td>72.6</td><td>-$2</td><td>-$145</td>
+      <td>-0.34</td><td>0</td><td>$17</td><td>$-51</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.8H</td><td>1H</td>
+      <td>35</td><td>48.6</td><td>-$2</td><td>-$64</td>
+      <td>-0.13</td><td>2</td><td>$65</td><td>$-65</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.1H</td><td>0.5H</td>
+      <td>102</td><td>71.6</td><td>-$2</td><td>-$194</td>
+      <td>-0.51</td><td>11</td><td>$17</td><td>$-50</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.1H</td><td>3H</td>
+      <td>102</td><td>72.5</td><td>-$2</td><td>-$201</td>
+      <td>-0.44</td><td>0</td><td>$17</td><td>$-53</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.1H</td><td>0.5H</td>
+      <td>24</td><td>58.3</td><td>-$2</td><td>-$51</td>
+      <td>-0.48</td><td>0</td><td>$15</td><td>$-26</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.1H</td><td>1H</td>
+      <td>24</td><td>58.3</td><td>-$2</td><td>-$51</td>
+      <td>-0.48</td><td>0</td><td>$15</td><td>$-26</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.1H</td><td>1.5H</td>
+      <td>24</td><td>58.3</td><td>-$2</td><td>-$51</td>
+      <td>-0.48</td><td>0</td><td>$15</td><td>$-26</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.1H</td><td>2H</td>
+      <td>24</td><td>58.3</td><td>-$2</td><td>-$51</td>
+      <td>-0.48</td><td>0</td><td>$15</td><td>$-26</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.1H</td><td>3H</td>
+      <td>24</td><td>58.3</td><td>-$2</td><td>-$51</td>
+      <td>-0.48</td><td>0</td><td>$15</td><td>$-26</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.1H</td><td>1.5H</td>
+      <td>35</td><td>85.7</td><td>-$2</td><td>-$78</td>
+      <td>-0.27</td><td>1</td><td>$15</td><td>$-108</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.1H</td><td>0.3H</td>
+      <td>24</td><td>58.3</td><td>-$2</td><td>-$57</td>
+      <td>-0.53</td><td>2</td><td>$15</td><td>$-26</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.5H</td><td>1.5H</td>
+      <td>35</td><td>48.6</td><td>-$3</td><td>-$90</td>
+      <td>-0.19</td><td>1</td><td>$68</td><td>$-69</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>momentum</td><td>0.2H</td><td>0.3H</td>
+      <td>24</td><td>45.8</td><td>-$3</td><td>-$68</td>
+      <td>-0.50</td><td>3</td><td>$22</td><td>$-24</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.1H</td><td>1.5H</td>
+      <td>102</td><td>72.5</td><td>-$3</td><td>-$291</td>
+      <td>-0.63</td><td>2</td><td>$17</td><td>$-56</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>momentum</td><td>1H</td><td>0.5H</td>
+      <td>35</td><td>51.4</td><td>-$3</td><td>-$113</td>
+      <td>-0.24</td><td>11</td><td>$61</td><td>$-72</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.1H</td><td>0.3H</td>
+      <td>102</td><td>64.7</td><td>-$4</td><td>-$364</td>
+      <td>-1.10</td><td>23</td><td>$17</td><td>$-42</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.8H</td><td>1.5H</td>
+      <td>35</td><td>48.6</td><td>-$4</td><td>-$127</td>
+      <td>-0.24</td><td>1</td><td>$65</td><td>$-69</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.3H</td><td>0.5H</td>
+      <td>24</td><td>54.2</td><td>-$4</td><td>-$92</td>
+      <td>-0.50</td><td>2</td><td>$22</td><td>$-34</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.1H</td><td>0.3H</td>
+      <td>24</td><td>58.3</td><td>-$4</td><td>-$97</td>
+      <td>-0.67</td><td>3</td><td>$15</td><td>$-31</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.5H</td><td>0.3H</td>
+      <td>35</td><td>40.0</td><td>-$4</td><td>-$143</td>
+      <td>-0.39</td><td>17</td><td>$64</td><td>$-49</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.1H</td><td>2H</td>
+      <td>35</td><td>85.7</td><td>-$4</td><td>-$146</td>
+      <td>-0.43</td><td>1</td><td>$15</td><td>$-121</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.5H</td><td>2H</td>
+      <td>35</td><td>48.6</td><td>-$5</td><td>-$158</td>
+      <td>-0.30</td><td>1</td><td>$68</td><td>$-73</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.3H</td><td>0.3H</td>
+      <td>24</td><td>50.0</td><td>-$5</td><td>-$118</td>
+      <td>-0.71</td><td>4</td><td>$22</td><td>$-32</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.1H</td><td>3H</td>
+      <td>35</td><td>85.7</td><td>-$5</td><td>-$176</td>
+      <td>-0.48</td><td>0</td><td>$15</td><td>$-128</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.2H</td><td>0.5H</td>
+      <td>24</td><td>54.2</td><td>-$5</td><td>-$123</td>
+      <td>-0.70</td><td>2</td><td>$20</td><td>$-34</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.2H</td><td>1H</td>
+      <td>35</td><td>65.7</td><td>-$5</td><td>-$184</td>
+      <td>-0.56</td><td>1</td><td>$31</td><td>$-74</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.5H</td><td>3H</td>
+      <td>35</td><td>48.6</td><td>-$5</td><td>-$189</td>
+      <td>-0.35</td><td>0</td><td>$68</td><td>$-74</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.8H</td><td>2H</td>
+      <td>35</td><td>48.6</td><td>-$6</td><td>-$194</td>
+      <td>-0.35</td><td>1</td><td>$65</td><td>$-73</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.2H</td><td>0.3H</td>
+      <td>24</td><td>50.0</td><td>-$6</td><td>-$149</td>
+      <td>-0.94</td><td>4</td><td>$19</td><td>$-32</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.8H</td><td>3H</td>
+      <td>35</td><td>48.6</td><td>-$6</td><td>-$225</td>
+      <td>-0.40</td><td>0</td><td>$65</td><td>$-74</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.3H</td><td>1H</td>
+      <td>24</td><td>54.2</td><td>-$6</td><td>-$155</td>
+      <td>-0.71</td><td>1</td><td>$22</td><td>$-40</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.5H</td><td>0.5H</td>
+      <td>24</td><td>50.0</td><td>-$7</td><td>-$167</td>
+      <td>-0.94</td><td>2</td><td>$20</td><td>$-34</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.8H</td><td>0.5H</td>
+      <td>24</td><td>50.0</td><td>-$7</td><td>-$167</td>
+      <td>-0.94</td><td>2</td><td>$20</td><td>$-34</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>1H</td><td>0.5H</td>
+      <td>24</td><td>50.0</td><td>-$7</td><td>-$167</td>
+      <td>-0.94</td><td>2</td><td>$20</td><td>$-34</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.2H</td><td>1.5H</td>
+      <td>35</td><td>65.7</td><td>-$7</td><td>-$251</td>
+      <td>-0.69</td><td>1</td><td>$31</td><td>$-80</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.2H</td><td>0.3H</td>
+      <td>35</td><td>54.3</td><td>-$7</td><td>-$257</td>
+      <td>-0.98</td><td>14</td><td>$30</td><td>$-52</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.2H</td><td>1H</td>
+      <td>24</td><td>54.2</td><td>-$8</td><td>-$186</td>
+      <td>-0.87</td><td>1</td><td>$20</td><td>$-40</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.5H</td><td>0.3H</td>
+      <td>84</td><td>40.5</td><td>-$8</td><td>-$670</td>
+      <td>-1.40</td><td>29</td><td>$42</td><td>$-42</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.5H</td><td>0.3H</td>
+      <td>24</td><td>45.8</td><td>-$8</td><td>-$194</td>
+      <td>-1.22</td><td>4</td><td>$20</td><td>$-32</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.8H</td><td>0.3H</td>
+      <td>24</td><td>45.8</td><td>-$8</td><td>-$194</td>
+      <td>-1.22</td><td>4</td><td>$20</td><td>$-32</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>1H</td><td>0.3H</td>
+      <td>24</td><td>45.8</td><td>-$8</td><td>-$194</td>
+      <td>-1.22</td><td>4</td><td>$20</td><td>$-32</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.2H</td><td>0.3H</td>
+      <td>84</td><td>50.0</td><td>-$8</td><td>-$684</td>
+      <td>-1.77</td><td>25</td><td>$26</td><td>$-42</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.5H</td><td>0.3H</td>
+      <td>102</td><td>40.2</td><td>-$8</td><td>-$862</td>
+      <td>-1.57</td><td>37</td><td>$45</td><td>$-45</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>1H</td><td>1H</td>
+      <td>35</td><td>48.6</td><td>-$9</td><td>-$306</td>
+      <td>-0.75</td><td>2</td><td>$51</td><td>$-65</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.5H</td><td>0.5H</td>
+      <td>35</td><td>45.7</td><td>-$9</td><td>-$311</td>
+      <td>-0.71</td><td>9</td><td>$60</td><td>$-67</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.3H</td><td>0.3H</td>
+      <td>84</td><td>42.9</td><td>-$9</td><td>-$748</td>
+      <td>-1.72</td><td>29</td><td>$36</td><td>$-42</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.2H</td><td>2H</td>
+      <td>35</td><td>65.7</td><td>-$9</td><td>-$319</td>
+      <td>-0.79</td><td>1</td><td>$31</td><td>$-85</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.2H</td><td>0.5H</td>
+      <td>84</td><td>56.0</td><td>-$9</td><td>-$775</td>
+      <td>-1.57</td><td>11</td><td>$26</td><td>$-54</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.2H</td><td>1H</td>
+      <td>102</td><td>58.8</td><td>-$9</td><td>-$955</td>
+      <td>-1.33</td><td>4</td><td>$29</td><td>$-64</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.8H</td><td>0.3H</td>
+      <td>35</td><td>40.0</td><td>-$9</td><td>-$329</td>
+      <td>-1.00</td><td>17</td><td>$50</td><td>$-49</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.2H</td><td>0.5H</td>
+      <td>102</td><td>56.9</td><td>-$9</td><td>-$963</td>
+      <td>-1.72</td><td>15</td><td>$28</td><td>$-58</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.3H</td><td>1.5H</td>
+      <td>24</td><td>54.2</td><td>-$10</td><td>-$230</td>
+      <td>-0.83</td><td>1</td><td>$22</td><td>$-47</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.5H</td><td>1H</td>
+      <td>24</td><td>50.0</td><td>-$10</td><td>-$230</td>
+      <td>-1.08</td><td>1</td><td>$20</td><td>$-39</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.8H</td><td>1H</td>
+      <td>24</td><td>50.0</td><td>-$10</td><td>-$230</td>
+      <td>-1.08</td><td>1</td><td>$20</td><td>$-39</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>1H</td><td>1H</td>
+      <td>24</td><td>50.0</td><td>-$10</td><td>-$230</td>
+      <td>-1.08</td><td>1</td><td>$20</td><td>$-39</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.3H</td><td>2H</td>
+      <td>24</td><td>54.2</td><td>-$10</td><td>-$233</td>
+      <td>-0.83</td><td>0</td><td>$22</td><td>$-47</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.3H</td><td>3H</td>
+      <td>24</td><td>54.2</td><td>-$10</td><td>-$233</td>
+      <td>-0.83</td><td>0</td><td>$22</td><td>$-47</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>1H</td><td>0.3H</td>
+      <td>35</td><td>40.0</td><td>-$10</td><td>-$349</td>
+      <td>-1.08</td><td>17</td><td>$49</td><td>$-49</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.5H</td><td>0.5H</td>
+      <td>84</td><td>45.2</td><td>-$10</td><td>-$839</td>
+      <td>-1.46</td><td>14</td><td>$41</td><td>$-52</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.2H</td><td>3H</td>
+      <td>35</td><td>65.7</td><td>-$10</td><td>-$350</td>
+      <td>-0.82</td><td>0</td><td>$31</td><td>$-88</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.8H</td><td>0.3H</td>
+      <td>84</td><td>40.5</td><td>-$10</td><td>-$845</td>
+      <td>-1.86</td><td>29</td><td>$37</td><td>$-42</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.8H</td><td>1H</td>
+      <td>102</td><td>47.1</td><td>-$10</td><td>-$1030</td>
+      <td>-1.10</td><td>6</td><td>$51</td><td>$-65</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.2H</td><td>0.3H</td>
+      <td>102</td><td>49.0</td><td>-$10</td><td>-$1035</td>
+      <td>-2.35</td><td>33</td><td>$27</td><td>$-46</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>1H</td><td>0.3H</td>
+      <td>84</td><td>40.5</td><td>-$10</td><td>-$865</td>
+      <td>-1.92</td><td>29</td><td>$36</td><td>$-42</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>1H</td><td>1.5H</td>
+      <td>35</td><td>48.6</td><td>-$11</td><td>-$369</td>
+      <td>-0.85</td><td>1</td><td>$51</td><td>$-69</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.2H</td><td>0.5H</td>
+      <td>35</td><td>62.9</td><td>-$11</td><td>-$371</td>
+      <td>-1.07</td><td>7</td><td>$29</td><td>$-77</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.3H</td><td>0.3H</td>
+      <td>102</td><td>42.2</td><td>-$11</td><td>-$1083</td>
+      <td>-2.22</td><td>37</td><td>$36</td><td>$-45</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.5H</td><td>1H</td>
+      <td>84</td><td>46.4</td><td>-$11</td><td>-$900</td>
+      <td>-1.19</td><td>4</td><td>$44</td><td>$-58</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.3H</td><td>1H</td>
+      <td>102</td><td>50.0</td><td>-$11</td><td>-$1097</td>
+      <td>-1.43</td><td>5</td><td>$39</td><td>$-61</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.5H</td><td>1H</td>
+      <td>102</td><td>47.1</td><td>-$11</td><td>-$1108</td>
+      <td>-1.25</td><td>6</td><td>$50</td><td>$-65</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.2H</td><td>1.5H</td>
+      <td>24</td><td>54.2</td><td>-$11</td><td>-$261</td>
+      <td>-0.96</td><td>1</td><td>$20</td><td>$-47</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.8H</td><td>0.3H</td>
+      <td>102</td><td>39.2</td><td>-$11</td><td>-$1119</td>
+      <td>-2.10</td><td>38</td><td>$41</td><td>$-45</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.2H</td><td>2H</td>
+      <td>24</td><td>54.2</td><td>-$11</td><td>-$264</td>
+      <td>-0.96</td><td>0</td><td>$20</td><td>$-47</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.2H</td><td>3H</td>
+      <td>24</td><td>54.2</td><td>-$11</td><td>-$264</td>
+      <td>-0.96</td><td>0</td><td>$20</td><td>$-47</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.8H</td><td>1H</td>
+      <td>84</td><td>46.4</td><td>-$11</td><td>-$925</td>
+      <td>-1.18</td><td>4</td><td>$44</td><td>$-58</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.3H</td><td>0.5H</td>
+      <td>84</td><td>47.6</td><td>-$11</td><td>-$944</td>
+      <td>-1.76</td><td>14</td><td>$34</td><td>$-53</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.2H</td><td>1H</td>
+      <td>84</td><td>57.1</td><td>-$11</td><td>-$947</td>
+      <td>-1.41</td><td>3</td><td>$27</td><td>$-62</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.5H</td><td>0.5H</td>
+      <td>102</td><td>45.1</td><td>-$11</td><td>-$1155</td>
+      <td>-1.71</td><td>19</td><td>$45</td><td>$-57</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.3H</td><td>0.5H</td>
+      <td>102</td><td>48.0</td><td>-$11</td><td>-$1172</td>
+      <td>-1.92</td><td>18</td><td>$37</td><td>$-56</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>1H</td><td>0.5H</td>
+      <td>84</td><td>45.2</td><td>-$12</td><td>-$969</td>
+      <td>-1.72</td><td>14</td><td>$37</td><td>$-52</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.3H</td><td>1H</td>
+      <td>35</td><td>48.6</td><td>-$12</td><td>-$404</td>
+      <td>-1.07</td><td>2</td><td>$45</td><td>$-65</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.8H</td><td>0.5H</td>
+      <td>84</td><td>45.2</td><td>-$12</td><td>-$975</td>
+      <td>-1.74</td><td>14</td><td>$37</td><td>$-52</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.2H</td><td>2H</td>
+      <td>102</td><td>58.8</td><td>-$12</td><td>-$1185</td>
+      <td>-1.39</td><td>1</td><td>$29</td><td>$-69</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.2H</td><td>3H</td>
+      <td>102</td><td>58.8</td><td>-$12</td><td>-$1216</td>
+      <td>-1.41</td><td>0</td><td>$29</td><td>$-70</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.8H</td><td>2H</td>
+      <td>102</td><td>47.1</td><td>-$12</td><td>-$1218</td>
+      <td>-1.18</td><td>1</td><td>$51</td><td>$-68</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>1H</td><td>0.3H</td>
+      <td>102</td><td>39.2</td><td>-$12</td><td>-$1221</td>
+      <td>-2.39</td><td>38</td><td>$39</td><td>$-45</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.3H</td><td>0.3H</td>
+      <td>35</td><td>40.0</td><td>-$12</td><td>-$419</td>
+      <td>-1.40</td><td>17</td><td>$44</td><td>$-49</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.8H</td><td>3H</td>
+      <td>102</td><td>47.1</td><td>-$12</td><td>-$1249</td>
+      <td>-1.20</td><td>0</td><td>$51</td><td>$-69</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>1H</td><td>2H</td>
+      <td>35</td><td>48.6</td><td>-$12</td><td>-$436</td>
+      <td>-0.93</td><td>1</td><td>$51</td><td>$-73</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.8H</td><td>0.5H</td>
+      <td>102</td><td>45.1</td><td>-$13</td><td>-$1278</td>
+      <td>-1.91</td><td>19</td><td>$42</td><td>$-57</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.5H</td><td>2H</td>
+      <td>102</td><td>47.1</td><td>-$13</td><td>-$1296</td>
+      <td>-1.31</td><td>1</td><td>$50</td><td>$-68</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.5H</td><td>1.5H</td>
+      <td>24</td><td>50.0</td><td>-$13</td><td>-$305</td>
+      <td>-1.13</td><td>1</td><td>$20</td><td>$-45</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.8H</td><td>1.5H</td>
+      <td>24</td><td>50.0</td><td>-$13</td><td>-$305</td>
+      <td>-1.13</td><td>1</td><td>$20</td><td>$-45</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>1H</td><td>1.5H</td>
+      <td>24</td><td>50.0</td><td>-$13</td><td>-$305</td>
+      <td>-1.13</td><td>1</td><td>$20</td><td>$-45</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.2H</td><td>1.5H</td>
+      <td>102</td><td>58.8</td><td>-$13</td><td>-$1303</td>
+      <td>-1.51</td><td>3</td><td>$29</td><td>$-72</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.3H</td><td>1H</td>
+      <td>84</td><td>48.8</td><td>-$13</td><td>-$1078</td>
+      <td>-1.52</td><td>4</td><td>$36</td><td>$-60</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.5H</td><td>2H</td>
+      <td>24</td><td>50.0</td><td>-$13</td><td>-$308</td>
+      <td>-1.13</td><td>0</td><td>$20</td><td>$-46</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.5H</td><td>3H</td>
+      <td>24</td><td>50.0</td><td>-$13</td><td>-$308</td>
+      <td>-1.13</td><td>0</td><td>$20</td><td>$-46</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.8H</td><td>2H</td>
+      <td>24</td><td>50.0</td><td>-$13</td><td>-$308</td>
+      <td>-1.13</td><td>0</td><td>$20</td><td>$-46</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>0.8H</td><td>3H</td>
+      <td>24</td><td>50.0</td><td>-$13</td><td>-$308</td>
+      <td>-1.13</td><td>0</td><td>$20</td><td>$-46</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>1H</td><td>2H</td>
+      <td>24</td><td>50.0</td><td>-$13</td><td>-$308</td>
+      <td>-1.13</td><td>0</td><td>$20</td><td>$-46</td></tr><tr class="neg"><td>last 2 cash hours (14:00-16:00 ET)</td><td>fade</td><td>1H</td><td>3H</td>
+      <td>24</td><td>50.0</td><td>-$13</td><td>-$308</td>
+      <td>-1.13</td><td>0</td><td>$20</td><td>$-46</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>1H</td><td>0.5H</td>
+      <td>35</td><td>45.7</td><td>-$13</td><td>-$452</td>
+      <td>-1.08</td><td>9</td><td>$52</td><td>$-67</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.3H</td><td>2H</td>
+      <td>102</td><td>50.0</td><td>-$13</td><td>-$1322</td>
+      <td>-1.48</td><td>1</td><td>$39</td><td>$-65</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.5H</td><td>3H</td>
+      <td>102</td><td>47.1</td><td>-$13</td><td>-$1327</td>
+      <td>-1.33</td><td>0</td><td>$50</td><td>$-69</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.8H</td><td>0.5H</td>
+      <td>35</td><td>45.7</td><td>-$13</td><td>-$458</td>
+      <td>-1.10</td><td>9</td><td>$51</td><td>$-67</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.8H</td><td>1.5H</td>
+      <td>102</td><td>47.1</td><td>-$13</td><td>-$1336</td>
+      <td>-1.29</td><td>3</td><td>$51</td><td>$-70</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.3H</td><td>3H</td>
+      <td>102</td><td>50.0</td><td>-$13</td><td>-$1353</td>
+      <td>-1.50</td><td>0</td><td>$39</td><td>$-66</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>1H</td><td>0.5H</td>
+      <td>102</td><td>45.1</td><td>-$13</td><td>-$1354</td>
+      <td>-2.06</td><td>19</td><td>$40</td><td>$-57</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.3H</td><td>1.5H</td>
+      <td>35</td><td>48.6</td><td>-$13</td><td>-$467</td>
+      <td>-1.15</td><td>1</td><td>$45</td><td>$-69</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>1H</td><td>3H</td>
+      <td>35</td><td>48.6</td><td>-$13</td><td>-$467</td>
+      <td>-0.96</td><td>0</td><td>$51</td><td>$-74</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>1H</td><td>1H</td>
+      <td>102</td><td>47.1</td><td>-$14</td><td>-$1406</td>
+      <td>-1.63</td><td>6</td><td>$43</td><td>$-65</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.5H</td><td>1.5H</td>
+      <td>84</td><td>46.4</td><td>-$14</td><td>-$1163</td>
+      <td>-1.33</td><td>2</td><td>$44</td><td>$-64</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.5H</td><td>1.5H</td>
+      <td>102</td><td>47.1</td><td>-$14</td><td>-$1414</td>
+      <td>-1.42</td><td>3</td><td>$50</td><td>$-70</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>1H</td><td>1H</td>
+      <td>84</td><td>46.4</td><td>-$14</td><td>-$1167</td>
+      <td>-1.61</td><td>4</td><td>$38</td><td>$-58</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>0.3H</td><td>1.5H</td>
+      <td>102</td><td>50.0</td><td>-$14</td><td>-$1440</td>
+      <td>-1.60</td><td>3</td><td>$39</td><td>$-67</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.8H</td><td>1.5H</td>
+      <td>84</td><td>46.4</td><td>-$14</td><td>-$1189</td>
+      <td>-1.33</td><td>2</td><td>$44</td><td>$-64</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.2H</td><td>1.5H</td>
+      <td>84</td><td>57.1</td><td>-$14</td><td>-$1215</td>
+      <td>-1.51</td><td>2</td><td>$27</td><td>$-69</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.5H</td><td>2H</td>
+      <td>84</td><td>46.4</td><td>-$15</td><td>-$1234</td>
+      <td>-1.38</td><td>1</td><td>$44</td><td>$-66</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.8H</td><td>2H</td>
+      <td>84</td><td>46.4</td><td>-$15</td><td>-$1260</td>
+      <td>-1.38</td><td>1</td><td>$44</td><td>$-66</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.5H</td><td>3H</td>
+      <td>84</td><td>46.4</td><td>-$15</td><td>-$1265</td>
+      <td>-1.40</td><td>0</td><td>$44</td><td>$-67</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.3H</td><td>2H</td>
+      <td>35</td><td>48.6</td><td>-$15</td><td>-$535</td>
+      <td>-1.21</td><td>1</td><td>$45</td><td>$-73</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.2H</td><td>2H</td>
+      <td>84</td><td>57.1</td><td>-$15</td><td>-$1285</td>
+      <td>-1.56</td><td>1</td><td>$27</td><td>$-71</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.8H</td><td>3H</td>
+      <td>84</td><td>46.4</td><td>-$15</td><td>-$1290</td>
+      <td>-1.40</td><td>0</td><td>$44</td><td>$-67</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>1H</td><td>2H</td>
+      <td>102</td><td>47.1</td><td>-$16</td><td>-$1594</td>
+      <td>-1.66</td><td>1</td><td>$43</td><td>$-68</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.2H</td><td>3H</td>
+      <td>84</td><td>57.1</td><td>-$16</td><td>-$1316</td>
+      <td>-1.58</td><td>0</td><td>$27</td><td>$-72</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>1H</td><td>3H</td>
+      <td>102</td><td>47.1</td><td>-$16</td><td>-$1624</td>
+      <td>-1.67</td><td>0</td><td>$43</td><td>$-69</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.3H</td><td>1.5H</td>
+      <td>84</td><td>48.8</td><td>-$16</td><td>-$1342</td>
+      <td>-1.61</td><td>2</td><td>$36</td><td>$-66</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.3H</td><td>3H</td>
+      <td>35</td><td>48.6</td><td>-$16</td><td>-$565</td>
+      <td>-1.22</td><td>0</td><td>$45</td><td>$-74</td></tr><tr class="neg"><td>full 23h session (18:00-17:00 ET)</td><td>fade</td><td>1H</td><td>1.5H</td>
+      <td>102</td><td>47.1</td><td>-$17</td><td>-$1711</td>
+      <td>-1.76</td><td>3</td><td>$43</td><td>$-70</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.3H</td><td>2H</td>
+      <td>84</td><td>48.8</td><td>-$17</td><td>-$1413</td>
+      <td>-1.66</td><td>1</td><td>$36</td><td>$-67</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>1H</td><td>1.5H</td>
+      <td>84</td><td>46.4</td><td>-$17</td><td>-$1431</td>
+      <td>-1.69</td><td>2</td><td>$38</td><td>$-64</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>0.3H</td><td>3H</td>
+      <td>84</td><td>48.8</td><td>-$17</td><td>-$1443</td>
+      <td>-1.67</td><td>0</td><td>$36</td><td>$-68</td></tr><tr class="neg"><td>first 2 cash hours (09:30-11:30 ET)</td><td>fade</td><td>0.3H</td><td>0.5H</td>
+      <td>35</td><td>45.7</td><td>-$18</td><td>-$613</td>
+      <td>-1.64</td><td>9</td><td>$41</td><td>$-67</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>1H</td><td>2H</td>
+      <td>84</td><td>46.4</td><td>-$18</td><td>-$1502</td>
+      <td>-1.74</td><td>1</td><td>$38</td><td>$-66</td></tr><tr class="neg"><td>cash hours only (09:30-16:00 ET)</td><td>fade</td><td>1H</td><td>3H</td>
+      <td>84</td><td>46.4</td><td>-$18</td><td>-$1533</td>
+      <td>-1.76</td><td>0</td><td>$38</td><td>$-67</td></tr></tbody></table></div>
+
+<h2>What this does and does not establish</h2>
+<div class="card">
+  <p><strong>Established:</strong> on 765 sessions of real 1-minute NQ tape, the nowcast's extension probabilities match reality to within a few points across all ten deciles. The model is calibrated.</p>
+  <p><strong>Not established:</strong> that any rule above makes money. 0 of 288 rule variants reach t &gt; 2, and 102 band touches over three years is a small sample. Treat every number here as a hypothesis with a confidence interval, not a result.</p>
+  <p><strong>Reproduce:</strong> <code>node src/backtest_report.js &amp;&amp; node src/render_report.js</code></p>
+</div>
+
+</div></body></html>
