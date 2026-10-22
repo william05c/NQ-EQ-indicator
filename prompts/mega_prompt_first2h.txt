@@ -1,0 +1,79 @@
+MEGA PROMPT — first-two-hour cash-window study
+===============================================
+
+ROLE
+Act as three people at once, and label which one is speaking when it matters:
+  (a) QUANT RESEARCHER  — formulate hypotheses, test them, report what survives.
+  (b) RISK MANAGER      — size the thing, measure the tail, state the ruin path.
+  (c) QUANT ENGINEER    — make it reproducible: committed code, committed data
+                          provenance, one command to rebuild every number.
+
+CONTEXT ALREADY ESTABLISHED IN THIS REPO (do not re-derive, do not contradict)
+  - Daily model: predicts a session's high/low band from prior daily bars.
+    Measured by MAE and coverage. It is NOT a strategy and has no win rate.
+  - Intraday nowcast: P(new high) / P(new low) from the running extremes.
+    Calibrated on 765 sessions, worst decile error 2.6 points. NOT a strategy.
+  - A TRADING RULE is a third object: entry at a band touch, exit by
+    target/stop/close. Every win rate in this repo belongs to a rule.
+  - Data: CME NQ 1-minute, 2022-12-26 → 2025-12-11, 765 usable sessions.
+    The daily band source is a BACK-ADJUSTED continuous series and sits up to
+    24% away from raw intraday prices — bands MUST be rescaled per session by
+    intradayOpen/dailyOpen before use. Skipping this invalidated two earlier
+    results and is the single largest source of error in this project's history.
+  - H = half the band width = (upper band − lower band)/2. All targets and stops
+    are quoted in H units so sessions of different volatility are comparable.
+  - Win = net P&L per trade > 0 after a 2 bp round-trip cost.
+  - Expectancy is the decision metric. Win rate without expectancy is decoration.
+
+TASK
+Study ONE window only: entries restricted to 09:30–11:30 ET (elapsed 930–1050
+minutes after the 18:00 session open). Report everything below.
+
+1. STRATEGY SPECIFICATION, EXACT AND REPLICABLE
+   For each variant state: direction, entry trigger, entry price rule, target,
+   stop, TIME STOP, and what happens if nothing triggers. Anything ambiguous is a
+   bug — the reader must be able to rebuild the trade list without asking.
+
+2. THE GRID
+   direction × target f ∈ {0.1,0.2,0.3,0.5,0.8,1.0} × stop g ∈ {0.3,0.5,1.0,1.5,2.0,3.0}
+   with a time stop at 11:30 ET. Report n, win rate, expectancy, total, t-stat,
+   avg win, avg loss, stop count, time-stop count.
+
+3. PER-TRADE LOG for the best few variants: timestamp, side, entry, exit, why,
+   P&L. Committed to the repo so the trades can be replayed bar by bar.
+
+4. RISK ASSESSMENT
+   - Distribution of per-trade P&L: mean, sd, skew, kurtosis, p5/p50/p95, worst.
+   - VaR95 and CVaR95 per trade.
+   - Maximum drawdown, and time under water.
+   - Bootstrap CI (10,000 resamples) on expectancy and on win rate.
+   - Ruin analysis: at what position size does a 20% drawdown become likely?
+   - Kelly fraction implied by the measured edge, and why it is almost certainly
+     the wrong number to use when the edge is not statistically distinguishable
+     from zero.
+
+5. MULTIPLE TESTING
+   State how many cells were tested and compute the Bonferroni threshold. At 144
+   cells, a |t| of 2 is expected by chance about 6.6 times — say so explicitly.
+
+6. ROBUSTNESS
+   - Split by calendar year (2023, 2024, 2025) and check sign stability.
+   - Parameter stability: does the sign of expectancy flip for small changes in
+     f and g? A strategy whose sign flips under a 0.1H change is noise.
+   - Sensitivity to the entry rule: first touch vs requiring the break to persist.
+
+7. HONEST CONCLUSION
+   State plainly whether any variant is worth trading. If none is, say that in the
+   first sentence of the section, and give the number that kills it.
+
+OUTPUT
+  - src/first2h_study.js               the study, one command, prints its table
+  - reports/first2h_results.json       machine-readable results + trade log
+  - reports/first2h_report.html        self-contained dashboard, offline, no CDN
+  - docs/backtesting/first2h.md        the written specification + findings
+  - commit and push everything
+
+STYLE
+Numbers, not adjectives. Every figure reproducible from committed code and data.
+If a claim fails, publish the failure as prominently as a success. Never report a
+win rate without the expectancy and the stop count beside it.

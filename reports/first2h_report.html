@@ -1,0 +1,430 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<title>First 2 cash hours — study</title><style>
+:root{color-scheme:dark}
+body{margin:0;padding:26px 18px 60px;background:#0e1117;color:#d7dde8;font:14px/1.55 -apple-system,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:820px;margin:0 auto}
+h1{font-size:21px;margin:0 0 4px}h2{font-size:14px;margin:32px 0 10px;color:#8fb4ff;letter-spacing:.03em}
+.sub{color:#7d8799;font-size:13px;margin:0 0 20px}
+.card{background:#151a23;border:1px solid #222a37;border-radius:10px;padding:15px 17px;margin:12px 0}
+.chart{width:100%;height:auto;display:block}
+.grid{stroke:#232b38}.axis{stroke:#3a4454}.zero{stroke:#5a6577;stroke-dasharray:4 3}
+.ax{fill:#7d8799;font-size:10px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:4px 6px;text-align:right;border-bottom:1px solid #1e2430}
+th{color:#7d8799}th:first-child,td:first-child{text-align:left}
+tr.pos td:nth-child(6){color:#69db7c}tr.neg td:nth-child(6){color:#ff8787}
+.fail{border-left:3px solid #ff6b6b;padding-left:12px;color:#f0b8b8}
+.ok{border-left:3px solid #51cf66;padding-left:12px}
+code{background:#1b2230;padding:1px 5px;border-radius:4px}
+</style></head><body><div class="wrap">
+<h1>First two cash hours — 09:30 to 11:30 ET</h1>
+<p class="sub">2026-10-22T15:52:31.140Z · NQ 1-minute · 44 entries in 767 sessions · 72 cells · $10000 per trade · 2 bp round trip</p>
+
+<h2>Verdict</h2>
+<div class="card fail">
+  <p><strong>No variant is tradeable.</strong> The best of 72 cells is fade 0.8H/1H at <strong>+$12.96 per trade, t = 1.28</strong>, with a 95% bootstrap CI of <strong>[$-4.63, $34.33]</strong> — it includes zero.</p>
+  <p>The window produces <strong>44 entries in three years</strong>. That is the binding constraint, not the parameter choice.</p>
+</div>
+
+<h2>Exact specification (replicate from this)</h2>
+<div class="card">
+  <p><strong>Window</strong> — entries only 09:30-11:30 ET (930-1050 min after the 18:00 open)</p>
+  <p><strong>Entry</strong> — first band touch inside the window, filled at the band level (or session open if gapped through)</p>
+  <p><strong>Target</strong> — f * H in favour, H = (upper band - lower band)/2</p>
+  <p><strong>Stop</strong> — g * H against; if target and stop occur inside the same minute, the stop is assumed first</p>
+  <p><strong>Time stop</strong> — any open position closed at the 11:30 bar close</p>
+  <p><strong>Costs</strong> — 2 bp round trip; fixed $10000 per trade, no leverage, no compounding.</p>
+  <p><strong>Alignment</strong> — daily band rescaled per session by intradayOpen/dailyOpen (daily series is back-adjusted)</p>
+</div>
+
+<h2>Equity curve — best cell, all 44 trades</h2>
+<div class="card"><svg viewBox="0 0 740 260" class="chart"><line x1="46" y1="210.0633823889448" x2="720" y2="210.0633823889448" class="zero"/><text x="38" y="214.0633823889448" class="ax" text-anchor="end">$0</text><text x="38" y="50" class="ax" text-anchor="end">+$642</text><text x="38" y="238" class="ax" text-anchor="end">-$94</text><polyline points="46,209.62868257120317 61.674418604651166,203.06215826555317 77.34883720930233,203.03403063028753 93.02325581395348,208.480563640815 108.69767441860465,205.555289573189 124.37209302325581,212.7457359701858 140.04651162790697,197.95827099371616 155.72093023255815,182.39090340306302 171.3953488372093,183.14523543973232 187.06976744186048,182.73866325725635 202.74418604651163,183.58249231522538 218.4186046511628,198.06311036152445 234.09302325581396,210.07105356219907 249.7674418604651,219.4784690296782 265.4418604651163,234 281.1162790697674,172.37490819074563 296.7906976744186,172.1294306466092 312.4651162790698,175.26694050760318 328.13953488372096,173.1752672669405 343.8139534883721,183.85609749462748 359.48837209302326,182.87163026033025 375.1627906976744,189.95979434727022 390.8372093023256,192.8006855090993 406.5116279069767,205.04387802290472 422.1860465116279,208.0509779385762 437.8604651162791,201.8935828731536 453.5348837209302,188.00620222518432 469.2093023255814,182.92532847311008 484.8837209302326,181.7260683876935 500.5581395348837,149.46878485351323 516.2325581395348,153.86436712820654 531.9069767441861,144.7816979951579 547.5813953488372,141.32455591523626 563.2558139534884,145.18315606213108 578.9302325581396,70.13351105791463 594.6046511627907,54.21582655531677 610.2790697674419,55.45599956475613 625.953488372093,61.5264546666304 641.6279069767442,57.44539049536192 657.3023255813953,46 672.9767441860465,52.45912788009031 688.6511627906976,50.612932183564084 704.3255813953488,51.67922526590678 720,64.25483528739696" fill="none" stroke="#69db7c" stroke-width="2"/><circle cx="46" cy="209.62868257120317" r="2.5" fill="#69db7c"><title>2023-05-26 short @ 16778.7 -> 16772.5 (time)  +$2</title></circle><circle cx="61.674418604651166" cy="203.06215826555317" r="2.5" fill="#69db7c"><title>2023-07-12 short @ 17848.41 -> 17799 (time)  +$26</title></circle><circle cx="77.34883720930233" cy="203.03403063028753" r="2.5" fill="#69db7c"><title>2023-07-28 short @ 18217.34 -> 18213.5 (time)  +$0</title></circle><circle cx="93.02325581395348" cy="208.480563640815" r="2.5" fill="#ff8787"><title>2023-11-14 short @ 17984.8 -> 18019.5 (time)  -$21</title></circle><circle cx="108.69767441860465" cy="205.555289573189" r="2.5" fill="#69db7c"><title>2023-12-04 long @ 17894.95 -> 17919 (time)  +$11</title></circle><circle cx="124.37209302325581" cy="212.7457359701858" r="2.5" fill="#ff8787"><title>2024-01-02 long @ 18746.71 -> 18697.75 (time)  -$28</title></circle><circle cx="140.04651162790697" cy="197.95827099371616" r="2.5" fill="#69db7c"><title>2024-01-17 long @ 18652.9 -> 18764.5 (time)  +$58</title></circle><circle cx="155.72093023255815" cy="182.39090340306302" r="2.5" fill="#69db7c"><title>2024-02-13 long @ 19561.5 -> 19684.5 (time)  +$61</title></circle><circle cx="171.3953488372093" cy="183.14523543973232" r="2.5" fill="#ff8787"><title>2024-03-05 long @ 19902.14 -> 19900.25 (time)  -$3</title></circle><circle cx="187.06976744186048" cy="182.73866325725635" r="2.5" fill="#69db7c"><title>2024-04-02 long @ 19953.59 -> 19960.75 (time)  +$2</title></circle><circle cx="202.74418604651163" cy="183.58249231522538" r="2.5" fill="#ff8787"><title>2024-05-31 long @ 20031.61 -> 20029 (time)  -$3</title></circle><circle cx="218.4186046511628" cy="198.06311036152445" r="2.5" fill="#ff8787"><title>2024-07-11 long @ 22092.44 -> 21971.75 (time)  -$57</title></circle><circle cx="234.09302325581396" cy="210.07105356219907" r="2.5" fill="#ff8787"><title>2024-07-17 long @ 21642.55 -> 21545.25 (time)  -$47</title></circle><circle cx="249.7674418604651" cy="219.4784690296782" r="2.5" fill="#ff8787"><title>2024-07-24 long @ 20898.2 -> 20825.5 (time)  -$37</title></circle><circle cx="265.4418604651163" cy="234" r="2.5" fill="#ff8787"><title>2024-07-31 short @ 20806.5 -> 20920.5 (time)  -$57</title></circle><circle cx="281.1162790697674" cy="172.37490819074563" r="2.5" fill="#69db7c"><title>2024-08-05 long @ 19039.75 -> 19502.42 (target)  +$241</title></circle><circle cx="296.7906976744186" cy="172.1294306466092" r="2.5" fill="#69db7c"><title>2024-08-29 short @ 21062.23 -> 21056 (time)  +$1</title></circle><circle cx="312.4651162790698" cy="175.26694050760318" r="2.5" fill="#ff8787"><title>2024-09-03 long @ 20657.71 -> 20636.5 (time)  -$12</title></circle><circle cx="328.13953488372096" cy="173.1752672669405" r="2.5" fill="#69db7c"><title>2024-09-06 long @ 19918.73 -> 19939 (time)  +$8</title></circle><circle cx="343.8139534883721" cy="183.85609749462748" r="2.5" fill="#ff8787"><title>2024-09-19 short @ 21246.75 -> 21331.25 (time)  -$42</title></circle><circle cx="359.48837209302326" cy="182.87163026033025" r="2.5" fill="#69db7c"><title>2024-10-01 long @ 21069.17 -> 21081.5 (time)  +$4</title></circle><circle cx="375.1627906976744" cy="189.95979434727022" r="2.5" fill="#ff8787"><title>2024-10-31 long @ 21348.41 -> 21293.5 (time)  -$28</title></circle><circle cx="390.8372093023256" cy="192.8006855090993" r="2.5" fill="#ff8787"><title>2024-11-06 short @ 21953.51 -> 21973.5 (time)  -$11</title></circle><circle cx="406.5116279069767" cy="205.04387802290472" r="2.5" fill="#ff8787"><title>2024-11-15 long @ 21875.61 -> 21775.25 (time)  -$48</title></circle><circle cx="422.1860465116279" cy="208.0509779385762" r="2.5" fill="#ff8787"><title>2024-12-11 short @ 22931.87 -> 22954.25 (time)  -$12</title></circle><circle cx="437.8604651162791" cy="201.8935828731536" r="2.5" fill="#69db7c"><title>2024-12-27 long @ 22466.65 -> 22525.25 (time)  +$24</title></circle><circle cx="453.5348837209302" cy="188.00620222518432" r="2.5" fill="#69db7c"><title>2024-12-30 long @ 22167.91 -> 22292.75 (time)  +$54</title></circle><circle cx="469.2093023255814" cy="182.92532847311008" r="2.5" fill="#69db7c"><title>2025-01-10 long @ 21800.31 -> 21848 (time)  +$20</title></circle><circle cx="484.8837209302326" cy="181.7260683876935" r="2.5" fill="#69db7c"><title>2025-01-15 short @ 22261.64 -> 22246.75 (time)  +$5</title></circle><circle cx="500.5581395348837" cy="149.46878485351323" r="2.5" fill="#69db7c"><title>2025-01-27 long @ 22030.25 -> 22312.56 (target)  +$126</title></circle><circle cx="516.2325581395348" cy="153.86436712820654" r="2.5" fill="#ff8787"><title>2025-02-25 long @ 21989.66 -> 21956.25 (time)  -$17</title></circle><circle cx="531.9069767441861" cy="144.7816979951579" r="2.5" fill="#69db7c"><title>2025-03-10 long @ 20454.51 -> 20531.25 (time)  +$36</title></circle><circle cx="547.5813953488372" cy="141.32455591523626" r="2.5" fill="#69db7c"><title>2025-03-28 long @ 20265.54 -> 20297 (time)  +$14</title></circle><circle cx="563.2558139534884" cy="145.18315606213108" r="2.5" fill="#ff8787"><title>2025-04-04 long @ 18728.51 -> 18704 (time)  -$15</title></circle><circle cx="578.9302325581396" cy="70.13351105791463" r="2.5" fill="#69db7c"><title>2025-04-07 short @ 18424.04 -> 17879.6 (target)  +$294</title></circle><circle cx="594.6046511627907" cy="54.21582655531677" r="2.5" fill="#69db7c"><title>2025-05-12 short @ 21634.25 -> 21495.25 (time)  +$62</title></circle><circle cx="610.2790697674419" cy="55.45599956475613" r="2.5" fill="#ff8787"><title>2025-06-16 short @ 22677.78 -> 22684.25 (time)  -$5</title></circle><circle cx="625.953488372093" cy="61.5264546666304" r="2.5" fill="#ff8787"><title>2025-08-01 long @ 23447.72 -> 23396.75 (time)  -$24</title></circle><circle cx="641.6279069767442" cy="57.44539049536192" r="2.5" fill="#69db7c"><title>2025-08-04 short @ 23755.66 -> 23713 (time)  +$16</title></circle><circle cx="657.3023255813953" cy="46" r="2.5" fill="#69db7c"><title>2025-08-20 long @ 23601.64 -> 23712 (time)  +$45</title></circle><circle cx="672.9767441860465" cy="52.45912788009031" r="2.5" fill="#ff8787"><title>2025-08-22 short @ 24060.53 -> 24116.5 (time)  -$25</title></circle><circle cx="688.6511627906976" cy="50.612932183564084" r="2.5" fill="#69db7c"><title>2025-09-02 long @ 23587.75 -> 23609.5 (time)  +$7</title></circle><circle cx="704.3255813953488" cy="51.67922526590678" r="2.5" fill="#ff8787"><title>2025-09-18 short @ 25034.06 -> 25039.5 (time)  -$4</title></circle><circle cx="720" cy="64.25483528739696" r="2.5" fill="#ff8787"><title>2025-10-10 long @ 25203.9 -> 25085 (time)  -$49</title></circle><text x="383" y="254" class="ax" text-anchor="middle">trade number (44 in total)</text></svg></div>
+
+<h2>P&amp;L distribution — note the positive skew</h2>
+<div class="card"><svg viewBox="0 0 740 260" class="chart"><rect x="48" y="146.26666666666665" width="44.142857142857146" height="87.73333333333333" fill="#c92a2a" opacity="0.8"><title>-$44: 7 trades</title></rect><text x="70.07142857142857" y="248" class="ax" text-anchor="middle">-44</text><rect x="96.14285714285714" y="108.66666666666667" width="44.142857142857146" height="125.33333333333333" fill="#c92a2a" opacity="0.8"><title>-$19: 10 trades</title></rect><rect x="144.28571428571428" y="46" width="44.142857142857146" height="188" fill="#2f9e44" opacity="0.8"><title>+$6: 15 trades</title></rect><text x="166.35714285714286" y="248" class="ax" text-anchor="middle">6</text><rect x="192.42857142857142" y="183.86666666666667" width="44.142857142857146" height="50.13333333333333" fill="#2f9e44" opacity="0.8"><title>+$31: 4 trades</title></rect><rect x="240.57142857142856" y="171.33333333333334" width="44.142857142857146" height="62.666666666666664" fill="#2f9e44" opacity="0.8"><title>+$56: 5 trades</title></rect><text x="262.6428571428571" y="248" class="ax" text-anchor="middle">56</text><rect x="288.7142857142857" y="234" width="44.142857142857146" height="0" fill="#2f9e44" opacity="0.8"><title>+$81: 0 trades</title></rect><rect x="336.85714285714283" y="234" width="44.142857142857146" height="0" fill="#2f9e44" opacity="0.8"><title>+$106: 0 trades</title></rect><text x="358.9285714285714" y="248" class="ax" text-anchor="middle">106</text><rect x="385" y="221.46666666666667" width="44.142857142857146" height="12.533333333333333" fill="#2f9e44" opacity="0.8"><title>+$131: 1 trades</title></rect><rect x="433.1428571428571" y="234" width="44.142857142857146" height="0" fill="#2f9e44" opacity="0.8"><title>+$156: 0 trades</title></rect><text x="455.21428571428567" y="248" class="ax" text-anchor="middle">156</text><rect x="481.28571428571433" y="234" width="44.142857142857146" height="0" fill="#2f9e44" opacity="0.8"><title>+$181: 0 trades</title></rect><rect x="529.4285714285714" y="234" width="44.142857142857146" height="0" fill="#2f9e44" opacity="0.8"><title>+$206: 0 trades</title></rect><text x="551.5" y="248" class="ax" text-anchor="middle">206</text><rect x="577.5714285714286" y="221.46666666666667" width="44.142857142857146" height="12.533333333333333" fill="#2f9e44" opacity="0.8"><title>+$231: 1 trades</title></rect><rect x="625.7142857142857" y="234" width="44.142857142857146" height="0" fill="#2f9e44" opacity="0.8"><title>+$256: 0 trades</title></rect><text x="647.7857142857142" y="248" class="ax" text-anchor="middle">256</text><rect x="673.8571428571429" y="221.46666666666667" width="44.142857142857146" height="12.533333333333333" fill="#2f9e44" opacity="0.8"><title>+$281: 1 trades</title></rect><line x1="46" y1="234" x2="720" y2="234" class="axis"/><text x="383" y="254" class="ax" text-anchor="middle">P&amp;L per trade, dollars</text></svg>
+<p>Skew <strong>2.55</strong>, excess kurtosis <strong>7.39</strong>, worst trade <strong>$-57</strong>, VaR95 <strong>$49</strong>, CVaR95 <strong>$57</strong>.</p>
+<p>3 of 44 trades hit target, 0 hit stop, and <strong>41 were closed by the 11:30 time stop</strong>. The target and stop almost never bind — this is effectively a two-hour hold from the band, so the grid is not 72 independent tests.</p>
+</div>
+
+<h2>Multiple testing</h2>
+<div class="card">
+  <p>72 cells tested. At that count roughly <strong>3.3</strong> cells clear |t| &gt; 2 by chance; the Bonferroni threshold is |t| &gt; 3.48. Nothing reaches it.</p>
+</div>
+
+<h2>Year by year — the result lives in one year</h2>
+<div class="card">
+<table><thead><tr><th>year</th><th>trades</th><th>expectancy</th><th>total</th></tr></thead><tbody>
+<tr><td>2023</td><td>5</td><td>+$4</td><td>+$18</td></tr><tr><td>2024</td><td>22</td><td>+$3</td><td>+$69</td></tr><tr><td>2025</td><td>17</td><td>+$28</td><td>+$484</td></tr>
+</tbody></table>
+<p>17 trades in the final year carry the whole result. That is not a track record, it is a subset.</p>
+</div>
+
+<h2>Every cell</h2>
+<div class="card" style="overflow-x:auto"><table><thead><tr>
+<th>dir</th><th>target</th><th>stop</th><th>n</th><th>win%</th><th>expectancy</th><th>total</th><th>maxDD</th><th>t</th><th>CVaR95</th><th>targets</th><th>stops</th><th>timeouts</th>
+</tr></thead><tbody>
+  <tr class="pos">
+    <td>fade</td><td>0.8H</td><td>1H</td><td>44</td>
+    <td>52.3</td><td>+$13</td><td>+$570</td>
+    <td>-$202</td><td>1.28</td><td>+$57</td>
+    <td>3</td><td>0</td><td>41</td>
+  <tr class="pos">
+    <td>fade</td><td>0.8H</td><td>1.5H</td><td>44</td>
+    <td>52.3</td><td>+$13</td><td>+$570</td>
+    <td>-$202</td><td>1.28</td><td>+$57</td>
+    <td>3</td><td>0</td><td>41</td>
+  <tr class="pos">
+    <td>fade</td><td>0.8H</td><td>2H</td><td>44</td>
+    <td>52.3</td><td>+$13</td><td>+$570</td>
+    <td>-$202</td><td>1.28</td><td>+$57</td>
+    <td>3</td><td>0</td><td>41</td>
+  <tr class="pos">
+    <td>fade</td><td>0.8H</td><td>3H</td><td>44</td>
+    <td>52.3</td><td>+$13</td><td>+$570</td>
+    <td>-$202</td><td>1.28</td><td>+$57</td>
+    <td>3</td><td>0</td><td>41</td>
+  <tr class="pos">
+    <td>fade</td><td>1H</td><td>1H</td><td>44</td>
+    <td>52.3</td><td>+$12</td><td>+$512</td>
+    <td>-$202</td><td>1.14</td><td>+$57</td>
+    <td>1</td><td>0</td><td>43</td>
+  <tr class="pos">
+    <td>fade</td><td>1H</td><td>1.5H</td><td>44</td>
+    <td>52.3</td><td>+$12</td><td>+$512</td>
+    <td>-$202</td><td>1.14</td><td>+$57</td>
+    <td>1</td><td>0</td><td>43</td>
+  <tr class="pos">
+    <td>fade</td><td>1H</td><td>2H</td><td>44</td>
+    <td>52.3</td><td>+$12</td><td>+$512</td>
+    <td>-$202</td><td>1.14</td><td>+$57</td>
+    <td>1</td><td>0</td><td>43</td>
+  <tr class="pos">
+    <td>fade</td><td>1H</td><td>3H</td><td>44</td>
+    <td>52.3</td><td>+$12</td><td>+$512</td>
+    <td>-$202</td><td>1.14</td><td>+$57</td>
+    <td>1</td><td>0</td><td>43</td>
+  <tr class="pos">
+    <td>fade</td><td>0.5H</td><td>1H</td><td>44</td>
+    <td>52.3</td><td>+$11</td><td>+$502</td>
+    <td>-$202</td><td>1.45</td><td>+$57</td>
+    <td>7</td><td>0</td><td>37</td>
+  <tr class="pos">
+    <td>fade</td><td>0.5H</td><td>1.5H</td><td>44</td>
+    <td>52.3</td><td>+$11</td><td>+$502</td>
+    <td>-$202</td><td>1.45</td><td>+$57</td>
+    <td>7</td><td>0</td><td>37</td>
+  <tr class="pos">
+    <td>fade</td><td>0.5H</td><td>2H</td><td>44</td>
+    <td>52.3</td><td>+$11</td><td>+$502</td>
+    <td>-$202</td><td>1.45</td><td>+$57</td>
+    <td>7</td><td>0</td><td>37</td>
+  <tr class="pos">
+    <td>fade</td><td>0.5H</td><td>3H</td><td>44</td>
+    <td>52.3</td><td>+$11</td><td>+$502</td>
+    <td>-$202</td><td>1.45</td><td>+$57</td>
+    <td>7</td><td>0</td><td>37</td>
+  <tr class="pos">
+    <td>fade</td><td>0.2H</td><td>1H</td><td>44</td>
+    <td>65.9</td><td>+$9</td><td>+$408</td>
+    <td>-$141</td><td>1.97</td><td>+$53</td>
+    <td>19</td><td>0</td><td>25</td>
+  <tr class="pos">
+    <td>fade</td><td>0.2H</td><td>1.5H</td><td>44</td>
+    <td>65.9</td><td>+$9</td><td>+$408</td>
+    <td>-$141</td><td>1.97</td><td>+$53</td>
+    <td>19</td><td>0</td><td>25</td>
+  <tr class="pos">
+    <td>fade</td><td>0.2H</td><td>2H</td><td>44</td>
+    <td>65.9</td><td>+$9</td><td>+$408</td>
+    <td>-$141</td><td>1.97</td><td>+$53</td>
+    <td>19</td><td>0</td><td>25</td>
+  <tr class="pos">
+    <td>fade</td><td>0.2H</td><td>3H</td><td>44</td>
+    <td>65.9</td><td>+$9</td><td>+$408</td>
+    <td>-$141</td><td>1.97</td><td>+$53</td>
+    <td>19</td><td>0</td><td>25</td>
+  <tr class="pos">
+    <td>fade</td><td>0.1H</td><td>1H</td><td>44</td>
+    <td>81.8</td><td>+$8</td><td>+$373</td>
+    <td>-$49</td><td>3.08</td><td>+$49</td>
+    <td>32</td><td>0</td><td>12</td>
+  <tr class="pos">
+    <td>fade</td><td>0.1H</td><td>1.5H</td><td>44</td>
+    <td>81.8</td><td>+$8</td><td>+$373</td>
+    <td>-$49</td><td>3.08</td><td>+$49</td>
+    <td>32</td><td>0</td><td>12</td>
+  <tr class="pos">
+    <td>fade</td><td>0.1H</td><td>2H</td><td>44</td>
+    <td>81.8</td><td>+$8</td><td>+$373</td>
+    <td>-$49</td><td>3.08</td><td>+$49</td>
+    <td>32</td><td>0</td><td>12</td>
+  <tr class="pos">
+    <td>fade</td><td>0.1H</td><td>3H</td><td>44</td>
+    <td>81.8</td><td>+$8</td><td>+$373</td>
+    <td>-$49</td><td>3.08</td><td>+$49</td>
+    <td>32</td><td>0</td><td>12</td>
+  <tr class="pos">
+    <td>fade</td><td>0.1H</td><td>0.5H</td><td>44</td>
+    <td>81.8</td><td>+$8</td><td>+$344</td>
+    <td>-$57</td><td>2.59</td><td>+$53</td>
+    <td>32</td><td>1</td><td>11</td>
+  <tr class="pos">
+    <td>fade</td><td>0.1H</td><td>0.3H</td><td>44</td>
+    <td>79.5</td><td>+$7</td><td>+$319</td>
+    <td>-$52</td><td>2.46</td><td>+$45</td>
+    <td>31</td><td>4</td><td>9</td>
+  <tr class="pos">
+    <td>fade</td><td>0.3H</td><td>1H</td><td>44</td>
+    <td>54.5</td><td>+$7</td><td>+$293</td>
+    <td>-$252</td><td>1.10</td><td>+$57</td>
+    <td>11</td><td>0</td><td>33</td>
+  <tr class="pos">
+    <td>fade</td><td>0.3H</td><td>1.5H</td><td>44</td>
+    <td>54.5</td><td>+$7</td><td>+$293</td>
+    <td>-$252</td><td>1.10</td><td>+$57</td>
+    <td>11</td><td>0</td><td>33</td>
+  <tr class="pos">
+    <td>fade</td><td>0.3H</td><td>2H</td><td>44</td>
+    <td>54.5</td><td>+$7</td><td>+$293</td>
+    <td>-$252</td><td>1.10</td><td>+$57</td>
+    <td>11</td><td>0</td><td>33</td>
+  <tr class="pos">
+    <td>fade</td><td>0.3H</td><td>3H</td><td>44</td>
+    <td>54.5</td><td>+$7</td><td>+$293</td>
+    <td>-$252</td><td>1.10</td><td>+$57</td>
+    <td>11</td><td>0</td><td>33</td>
+  <tr class="pos">
+    <td>fade</td><td>0.2H</td><td>0.3H</td><td>44</td>
+    <td>63.6</td><td>+$4</td><td>+$196</td>
+    <td>-$150</td><td>0.83</td><td>+$85</td>
+    <td>18</td><td>6</td><td>20</td>
+  <tr class="pos">
+    <td>fade</td><td>0.2H</td><td>0.5H</td><td>44</td>
+    <td>63.6</td><td>+$3</td><td>+$120</td>
+    <td>-$187</td><td>0.43</td><td>+$122</td>
+    <td>18</td><td>2</td><td>24</td>
+  <tr class="pos">
+    <td>fade</td><td>0.5H</td><td>0.3H</td><td>44</td>
+    <td>50.0</td><td>+$2</td><td>+$107</td>
+    <td>-$212</td><td>0.32</td><td>+$106</td>
+    <td>6</td><td>9</td><td>29</td>
+  <tr class="pos">
+    <td>fade</td><td>0.8H</td><td>0.3H</td><td>44</td>
+    <td>50.0</td><td>+$1</td><td>+$65</td>
+    <td>-$212</td><td>0.17</td><td>+$106</td>
+    <td>2</td><td>9</td><td>33</td>
+  <tr class="pos">
+    <td>momentum</td><td>0.1H</td><td>1H</td><td>44</td>
+    <td>68.2</td><td>+$1</td><td>+$59</td>
+    <td>-$154</td><td>0.36</td><td>+$64</td>
+    <td>28</td><td>0</td><td>16</td>
+  <tr class="pos">
+    <td>momentum</td><td>0.1H</td><td>1.5H</td><td>44</td>
+    <td>68.2</td><td>+$1</td><td>+$59</td>
+    <td>-$154</td><td>0.36</td><td>+$64</td>
+    <td>28</td><td>0</td><td>16</td>
+  <tr class="pos">
+    <td>momentum</td><td>0.1H</td><td>2H</td><td>44</td>
+    <td>68.2</td><td>+$1</td><td>+$59</td>
+    <td>-$154</td><td>0.36</td><td>+$64</td>
+    <td>28</td><td>0</td><td>16</td>
+  <tr class="pos">
+    <td>momentum</td><td>0.1H</td><td>3H</td><td>44</td>
+    <td>68.2</td><td>+$1</td><td>+$59</td>
+    <td>-$154</td><td>0.36</td><td>+$64</td>
+    <td>28</td><td>0</td><td>16</td>
+  <tr class="pos">
+    <td>fade</td><td>0.3H</td><td>0.3H</td><td>44</td>
+    <td>52.3</td><td>+$1</td><td>+$56</td>
+    <td>-$244</td><td>0.21</td><td>+$85</td>
+    <td>10</td><td>8</td><td>26</td>
+  <tr class="pos">
+    <td>fade</td><td>1H</td><td>0.3H</td><td>44</td>
+    <td>50.0</td><td>+$1</td><td>+$33</td>
+    <td>-$212</td><td>0.08</td><td>+$106</td>
+    <td>1</td><td>9</td><td>34</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.5H</td><td>1.5H</td><td>44</td>
+    <td>45.5</td><td>-$1</td><td>-$22</td>
+    <td>-$367</td><td>-0.05</td><td>+$168</td>
+    <td>4</td><td>0</td><td>40</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.5H</td><td>2H</td><td>44</td>
+    <td>45.5</td><td>-$1</td><td>-$22</td>
+    <td>-$367</td><td>-0.05</td><td>+$168</td>
+    <td>4</td><td>0</td><td>40</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.5H</td><td>3H</td><td>44</td>
+    <td>45.5</td><td>-$1</td><td>-$22</td>
+    <td>-$367</td><td>-0.05</td><td>+$168</td>
+    <td>4</td><td>0</td><td>40</td>
+  <tr class="neg">
+    <td>fade</td><td>0.3H</td><td>0.5H</td><td>44</td>
+    <td>52.3</td><td>-$1</td><td>-$30</td>
+    <td>-$251</td><td>-0.10</td><td>+$122</td>
+    <td>10</td><td>3</td><td>31</td>
+  <tr class="neg">
+    <td>fade</td><td>0.5H</td><td>0.5H</td><td>44</td>
+    <td>50.0</td><td>-$1</td><td>-$44</td>
+    <td>-$350</td><td>-0.11</td><td>+$175</td>
+    <td>6</td><td>4</td><td>34</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.5H</td><td>1H</td><td>44</td>
+    <td>45.5</td><td>-$1</td><td>-$58</td>
+    <td>-$403</td><td>-0.13</td><td>+$186</td>
+    <td>4</td><td>1</td><td>39</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.8H</td><td>0.3H</td><td>44</td>
+    <td>43.2</td><td>-$1</td><td>-$62</td>
+    <td>-$352</td><td>-0.16</td><td>+$96</td>
+    <td>1</td><td>10</td><td>33</td>
+  <tr class="neg">
+    <td>fade</td><td>0.8H</td><td>0.5H</td><td>44</td>
+    <td>50.0</td><td>-$2</td><td>-$86</td>
+    <td>-$350</td><td>-0.20</td><td>+$175</td>
+    <td>2</td><td>4</td><td>38</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.8H</td><td>1.5H</td><td>44</td>
+    <td>45.5</td><td>-$2</td><td>-$88</td>
+    <td>-$367</td><td>-0.19</td><td>+$168</td>
+    <td>1</td><td>0</td><td>43</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.8H</td><td>2H</td><td>44</td>
+    <td>45.5</td><td>-$2</td><td>-$88</td>
+    <td>-$367</td><td>-0.19</td><td>+$168</td>
+    <td>1</td><td>0</td><td>43</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.8H</td><td>3H</td><td>44</td>
+    <td>45.5</td><td>-$2</td><td>-$88</td>
+    <td>-$367</td><td>-0.19</td><td>+$168</td>
+    <td>1</td><td>0</td><td>43</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.1H</td><td>0.5H</td><td>44</td>
+    <td>68.2</td><td>-$2</td><td>-$99</td>
+    <td>-$311</td><td>-0.45</td><td>+$102</td>
+    <td>28</td><td>3</td><td>13</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.1H</td><td>0.3H</td><td>44</td>
+    <td>65.9</td><td>-$2</td><td>-$106</td>
+    <td>-$335</td><td>-0.55</td><td>+$82</td>
+    <td>27</td><td>6</td><td>11</td>
+  <tr class="neg">
+    <td>fade</td><td>1H</td><td>0.5H</td><td>44</td>
+    <td>50.0</td><td>-$3</td><td>-$118</td>
+    <td>-$350</td><td>-0.26</td><td>+$175</td>
+    <td>1</td><td>4</td><td>39</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.8H</td><td>1H</td><td>44</td>
+    <td>45.5</td><td>-$3</td><td>-$124</td>
+    <td>-$403</td><td>-0.26</td><td>+$186</td>
+    <td>1</td><td>1</td><td>42</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.5H</td><td>0.5H</td><td>44</td>
+    <td>45.5</td><td>-$3</td><td>-$132</td>
+    <td>-$366</td><td>-0.33</td><td>+$131</td>
+    <td>4</td><td>6</td><td>34</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.5H</td><td>0.3H</td><td>44</td>
+    <td>43.2</td><td>-$3</td><td>-$146</td>
+    <td>-$352</td><td>-0.46</td><td>+$96</td>
+    <td>3</td><td>10</td><td>31</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.3H</td><td>1.5H</td><td>44</td>
+    <td>45.5</td><td>-$4</td><td>-$173</td>
+    <td>-$362</td><td>-0.47</td><td>+$168</td>
+    <td>9</td><td>0</td><td>35</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.3H</td><td>2H</td><td>44</td>
+    <td>45.5</td><td>-$4</td><td>-$173</td>
+    <td>-$362</td><td>-0.47</td><td>+$168</td>
+    <td>9</td><td>0</td><td>35</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.3H</td><td>3H</td><td>44</td>
+    <td>45.5</td><td>-$4</td><td>-$173</td>
+    <td>-$362</td><td>-0.47</td><td>+$168</td>
+    <td>9</td><td>0</td><td>35</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.8H</td><td>0.5H</td><td>44</td>
+    <td>45.5</td><td>-$4</td><td>-$198</td>
+    <td>-$366</td><td>-0.46</td><td>+$131</td>
+    <td>1</td><td>6</td><td>37</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.3H</td><td>1H</td><td>44</td>
+    <td>45.5</td><td>-$5</td><td>-$209</td>
+    <td>-$398</td><td>-0.52</td><td>+$186</td>
+    <td>9</td><td>1</td><td>34</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.2H</td><td>1.5H</td><td>44</td>
+    <td>50.0</td><td>-$5</td><td>-$214</td>
+    <td>-$386</td><td>-0.62</td><td>+$168</td>
+    <td>16</td><td>0</td><td>28</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.2H</td><td>2H</td><td>44</td>
+    <td>50.0</td><td>-$5</td><td>-$214</td>
+    <td>-$386</td><td>-0.62</td><td>+$168</td>
+    <td>16</td><td>0</td><td>28</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.2H</td><td>3H</td><td>44</td>
+    <td>50.0</td><td>-$5</td><td>-$214</td>
+    <td>-$386</td><td>-0.62</td><td>+$168</td>
+    <td>16</td><td>0</td><td>28</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.3H</td><td>0.3H</td><td>44</td>
+    <td>43.2</td><td>-$5</td><td>-$232</td>
+    <td>-$353</td><td>-0.85</td><td>+$96</td>
+    <td>8</td><td>10</td><td>26</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.2H</td><td>0.3H</td><td>44</td>
+    <td>47.7</td><td>-$6</td><td>-$246</td>
+    <td>-$361</td><td>-0.99</td><td>+$96</td>
+    <td>15</td><td>9</td><td>20</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.2H</td><td>1H</td><td>44</td>
+    <td>50.0</td><td>-$6</td><td>-$250</td>
+    <td>-$422</td><td>-0.67</td><td>+$186</td>
+    <td>16</td><td>1</td><td>27</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.3H</td><td>0.5H</td><td>44</td>
+    <td>45.5</td><td>-$6</td><td>-$283</td>
+    <td>-$361</td><td>-0.84</td><td>+$131</td>
+    <td>9</td><td>6</td><td>29</td>
+  <tr class="neg">
+    <td>momentum</td><td>0.2H</td><td>0.5H</td><td>44</td>
+    <td>50.0</td><td>-$7</td><td>-$324</td>
+    <td>-$386</td><td>-1.05</td><td>+$131</td>
+    <td>16</td><td>6</td><td>22</td>
+  <tr class="neg">
+    <td>momentum</td><td>1H</td><td>0.3H</td><td>44</td>
+    <td>40.9</td><td>-$11</td><td>-$469</td>
+    <td>-$598</td><td>-1.76</td><td>+$106</td>
+    <td>0</td><td>11</td><td>33</td>
+  <tr class="neg">
+    <td>momentum</td><td>1H</td><td>1.5H</td><td>44</td>
+    <td>43.2</td><td>-$15</td><td>-$652</td>
+    <td>-$741</td><td>-1.53</td><td>+$270</td>
+    <td>0</td><td>0</td><td>44</td>
+  <tr class="neg">
+    <td>momentum</td><td>1H</td><td>2H</td><td>44</td>
+    <td>43.2</td><td>-$15</td><td>-$652</td>
+    <td>-$741</td><td>-1.53</td><td>+$270</td>
+    <td>0</td><td>0</td><td>44</td>
+  <tr class="neg">
+    <td>momentum</td><td>1H</td><td>3H</td><td>44</td>
+    <td>43.2</td><td>-$15</td><td>-$652</td>
+    <td>-$741</td><td>-1.53</td><td>+$270</td>
+    <td>0</td><td>0</td><td>44</td>
+  <tr class="neg">
+    <td>momentum</td><td>1H</td><td>0.5H</td><td>44</td>
+    <td>43.2</td><td>-$15</td><td>-$678</td>
+    <td>-$752</td><td>-1.96</td><td>+$170</td>
+    <td>0</td><td>7</td><td>37</td>
+  <tr class="neg">
+    <td>momentum</td><td>1H</td><td>1H</td><td>44</td>
+    <td>43.2</td><td>-$16</td><td>-$688</td>
+    <td>-$777</td><td>-1.53</td><td>+$288</td>
+    <td>0</td><td>1</td><td>43</td></tbody></table></div>
+
+<h2>Reproduce</h2>
+<div class="card"><p><code>node src/first2h_study.js &amp;&amp; node src/render_first2h.js</code></p>
+<p>Trade log with every entry, exit and reason is in <code>reports/first2h_results.json</code> under <code>bestTradeLog</code>.</p></div>
+</div></body></html>
